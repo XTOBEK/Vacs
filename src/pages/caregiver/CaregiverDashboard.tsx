@@ -23,7 +23,11 @@ import {
   UserCheck,
   Copy,
   Check,
-  Download
+  Download,
+  BellRing,
+  Volume2,
+  FileSearch,
+  BookOpen
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { Button } from "../../components/ui/Button";
@@ -663,62 +667,160 @@ function MedicalKitVerification({ user }: any) {
 }
 
 function AcademyModules() {
+   const [isBuzzerActive, setIsBuzzerActive] = useState(false);
+
+   const playSound = (frequency = 440, type: OscillatorType = "sine", duration = 0.5) => {
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+        
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.error("Audio Context failed", e);
+      }
+   };
+
+   const triggerBuzzer = () => {
+      setIsBuzzerActive(true);
+      playSound(150, "square", 0.3);
+      setTimeout(() => setIsBuzzerActive(false), 500);
+   };
+
+   const triggerAlarm = (type: 'emergency' | 'warning' | 'info') => {
+      if (type === 'emergency') {
+        playSound(880, "sawtooth", 0.8);
+        setTimeout(() => playSound(440, "sawtooth", 0.8), 200);
+      } else if (type === 'warning') {
+        playSound(330, "triangle", 0.5);
+      } else {
+        playSound(660, "sine", 0.2);
+      }
+   };
+
    return (
       <div className="p-6 md:p-14 space-y-12">
-         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
-            <div className="flex flex-col gap-2">
-               <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter italic uppercase">VACS Academy Node</h2>
-               <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Managed Private LMS • Tier-Based Certification</p>
+         {/* Sound Logic & Reminders Header */}
+         <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 flex flex-col gap-2">
+                <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter italic uppercase">VACS Academy Node</h2>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Managed Private LMS • Tier-Based Certification</p>
             </div>
-            <div className="h-20 w-px bg-slate-200 hidden lg:block"></div>
-            <div className="bg-slate-900 text-white px-8 py-4 rounded-[2rem] flex items-center gap-6 shadow-2xl shadow-slate-900/20">
-               <div>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Audit Score</p>
-                  <p className="text-2xl font-black italic tracking-tighter">94%</p>
-               </div>
-               <div className="w-px h-10 bg-slate-800"></div>
-               <div>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Modules Cleared</p>
-                  <p className="text-2xl font-black italic tracking-tighter">04</p>
-               </div>
+            
+            <div className="flex items-center gap-4">
+                <button 
+                  onClick={triggerBuzzer}
+                  className={cn(
+                    "flex-1 h-20 rounded-[2rem] border-4 flex flex-col items-center justify-center transition-all",
+                    isBuzzerActive ? "bg-rose-500 border-rose-400 scale-95 shadow-inner" : "bg-white border-slate-200 hover:border-slate-300 shadow-xl"
+                  )}
+                >
+                   <BellRing size={24} className={isBuzzerActive ? "text-white animate-ring" : "text-slate-400"} />
+                   <span className={cn("text-[9px] font-black uppercase tracking-widest mt-2", isBuzzerActive ? "text-white" : "text-slate-400")}>Academy Buzzer</span>
+                </button>
+                <div className="flex flex-col gap-2 flex-1">
+                   <button onClick={() => triggerAlarm('emergency')} className="h-9 px-4 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center gap-2 hover:bg-rose-100 transition-colors">
+                      <Volume2 size={14} /> <span className="text-[8px] font-black uppercase tracking-widest">Emergency Audio</span>
+                   </button>
+                   <button onClick={() => triggerAlarm('warning')} className="h-9 px-4 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-2 hover:bg-amber-100 transition-colors">
+                      <Volume2 size={14} /> <span className="text-[8px] font-black uppercase tracking-widest">Protocol Warning</span>
+                   </button>
+                </div>
             </div>
          </div>
 
-         {/* Tracks */}
-         <div className="space-y-12">
-            <AcademyTrack 
-               title="Track 1: HCA Foundational" 
-               desc="Modules for Tier 1 & 2 care. Core supportive care fundamentals."
-               modules={[
-                  { title: "Safe Mobilization (ADL)", progress: 100, status: "VERIFIED" },
-                  { title: "Standard Hygiene Protocols", progress: 100, status: "VERIFIED" },
-                  { title: "Nutrition & Hydration Audits", progress: 65, status: "IN_PROGRESS" }
-               ]}
-            />
-            
-            <AcademyTrack 
-               title="Track 2: Clinical Practice" 
-               desc="Advanced physiological monitoring and RN-led protocol adherence."
-               locked
-               reason="Requires Manual RN Check-In Pass"
-               modules={[
-                  { title: "Vital Signs Reporting (DCL)", progress: 0, status: "LOCKED" },
-                  { title: "Emergency Escalation Pathways", progress: 0, status: "LOCKED" },
-                  { title: "Medication Verification (MVS)", progress: 0, status: "LOCKED" }
-               ]}
-            />
+         <div className="grid lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-1 space-y-8">
+               <div className="bg-slate-900 text-white p-10 rounded-[3rem] relative overflow-hidden border border-slate-800 shadow-2xl">
+                  <div className="relative z-10">
+                     <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-6 flex items-center gap-2">
+                        <BookOpen size={14} className="text-blue-500" /> Professional Guide
+                     </p>
+                     <h3 className="text-xl font-black italic tracking-tight mb-4">Protocol Compliance</h3>
+                     <p className="text-xs text-slate-400 leading-relaxed font-medium mb-8">
+                        The VACS Reminder System ensures every vital record is timestamped within <span className="text-blue-400 underline underline-offset-4 decoration-2">±5 mins</span> of observation.
+                     </p>
+                     <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Clean ID Required</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Biometric Sync Only</span>
+                        </div>
+                     </div>
+                  </div>
+                  <AlertCircle size={120} className="absolute -bottom-10 -right-10 text-white/5 -rotate-12" />
+               </div>
 
-            <AcademyTrack 
-               title="Track 3: Global SCA Certification" 
-               desc="Neuro-cognitive support (Amnesia/Dementia) and Palliative End-of-Life protocols."
-               locked
-               reason="Global License: Requires SCA_Module_Pass & Kit_Verified"
-               modules={[
-                  { title: "Advanced Dementia Support", progress: 0, status: "LOCKED" },
-                  { title: "End-of-Life Palliative Care", progress: 0, status: "LOCKED" },
-                  { title: "Multi-disciplinary Sync", progress: 0, status: "LOCKED" }
-               ]}
-            />
+               <div className="bg-white border border-slate-200 p-8 rounded-[3rem] shadow-sm">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 mb-6 flex items-center gap-2 italic">
+                     <FileSearch size={14} className="text-slate-400" /> Active Reminders
+                  </h4>
+                  <div className="space-y-6">
+                     <div className="relative pl-6 border-l-2 border-emerald-100 py-1">
+                        <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white shadow-lg"></div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-1 italic">Policy Update • Today</p>
+                        <p className="text-xs font-bold text-slate-900">New Hydration Protocols in Effect</p>
+                     </div>
+                     <div className="relative pl-6 border-l-2 border-slate-100 py-1">
+                        <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-slate-300 border-4 border-white shadow-sm"></div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 italic">Audit Node • March 12</p>
+                        <p className="text-xs font-bold text-slate-900 opacity-60">Medication Verification Pass</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="lg:col-span-3">
+               <div className="bg-slate-900 text-white px-8 py-4 rounded-[2rem] flex items-center gap-6 shadow-2xl shadow-slate-900/20 mb-10 w-fit">
+                  <div>
+                     <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Audit Score</p>
+                     <p className="text-2xl font-black italic tracking-tighter">94%</p>
+                  </div>
+                  <div className="w-px h-10 bg-slate-800"></div>
+                  <div>
+                     <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Modules Cleared</p>
+                     <p className="text-2xl font-black italic tracking-tighter">04</p>
+                  </div>
+               </div>
+
+               {/* Tracks */}
+               <div className="space-y-12">
+                  <AcademyTrack 
+                     title="Track 1: HCA Foundational" 
+                     desc="Modules for Tier 1 & 2 care. Core supportive care fundamentals."
+                     modules={[
+                        { title: "Safe Mobilization (ADL)", progress: 100, status: "VERIFIED" },
+                        { title: "Standard Hygiene Protocols", progress: 100, status: "VERIFIED" },
+                        { title: "Nutrition & Hydration Audits", progress: 65, status: "IN_PROGRESS" }
+                     ]}
+                  />
+                  
+                  <AcademyTrack 
+                     title="Track 2: Clinical Practice" 
+                     desc="Advanced physiological monitoring and RN-led protocol adherence."
+                     locked
+                     reason="Requires Manual RN Check-In Pass"
+                     modules={[
+                        { title: "Vital Signs Reporting (DCL)", progress: 0, status: "LOCKED" },
+                        { title: "Emergency Escalation Pathways", progress: 0, status: "LOCKED" },
+                        { title: "Medication Verification (MVS)", progress: 0, status: "LOCKED" }
+                     ]}
+                  />
+               </div>
+            </div>
          </div>
       </div>
    );

@@ -302,6 +302,15 @@ function StaffManager() {
       }
   };
 
+  const handleUpdateVerificationStatus = async (staffId: string, verificationStatus: string) => {
+      try {
+          await updateDoc(doc(db, "users", staffId), { verificationStatus });
+          alert("Verification status updated.");
+      } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
+      }
+  };
+
   const rns = staff.filter(s => s.role === 'RN');
 
   return (
@@ -330,8 +339,9 @@ function StaffManager() {
                 <tr>
                    <th className="px-6 py-5">Field Agent</th>
                    <th className="px-6 py-5">Clinical Role</th>
+                   <th className="px-6 py-5">Verification Status</th>
                    <th className="px-6 py-5">Medical Kit</th>
-                   <th className="px-6 py-5">Guarantors</th>
+                   <th className="px-6 py-5">Supervisor</th>
                    <th className="px-6 py-5 text-right">Operations</th>
                 </tr>
              </thead>
@@ -353,6 +363,7 @@ function StaffManager() {
                       agent={agent}
                       rns={rns}
                       onAssignSupervisor={handleAssignSupervisor}
+                      onUpdateStatus={handleUpdateVerificationStatus}
                     />
                   ))
                 )}
@@ -386,7 +397,7 @@ function StaffManager() {
   );
 }
 
-function StaffRow({ agent, rns, onAssignSupervisor }: any) {
+function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
   const fullName = agent.fullName || agent.full_name || "Unknown Agent";
   const initials = fullName.split(' ').map((n: string) => n[0]).join('');
 
@@ -407,6 +418,22 @@ function StaffRow({ agent, rns, onAssignSupervisor }: any) {
           <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[9px] font-black rounded-lg border border-slate-200 uppercase tracking-widest">
             {agent.role}
           </span>
+       </td>
+       <td className="px-6 py-4">
+          <select 
+              className={cn(
+                "p-2 text-[9px] font-black uppercase tracking-widest rounded-lg border",
+                agent.verificationStatus === 'VERIFIED' ? "bg-emerald-50 border-emerald-100 text-emerald-600" : 
+                agent.verificationStatus === 'BLOCKED' ? "bg-red-50 border-red-100 text-red-600" :
+                "bg-slate-50 border-slate-200 text-slate-400"
+              )}
+              defaultValue={agent.verificationStatus || "PENDING"}
+              onChange={(e) => onUpdateStatus(agent.id, e.target.value)}
+          >
+              <option value="PENDING">Pending</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="BLOCKED">Blocked</option>
+          </select>
        </td>
        <td className="px-6 py-4">
           <div className={cn(

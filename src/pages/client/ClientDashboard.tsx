@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { 
@@ -16,11 +16,16 @@ import {
   Phone,
   Mail,
   Download,
-  ShieldAlert
+  ShieldAlert,
+  ChevronRight,
+  User,
+  BadgeCheck
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
+import { db, auth, handleFirestoreError, OperationType } from "../../lib/firebase";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 function ClientSupport() {
   const [messages, setMessages] = useState([
@@ -98,7 +103,19 @@ function ClientSupport() {
   );
 }
 
-export default function ClientDashboard({ user, onLogout }: any) {
+export default function ClientDashboard({ user: initialUser, onLogout }: any) {
+  const [user, setUser] = useState(initialUser);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const unsubscribe = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
+      if (snapshot.exists()) {
+        setUser({ ...auth.currentUser, ...snapshot.data() });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const menuItems = [
     { path: "/client", label: "Care Protocol", icon: Heart },
     { path: "/client/downloads", label: "App Gateway", icon: Download },
@@ -111,7 +128,7 @@ export default function ClientDashboard({ user, onLogout }: any) {
   return (
     <DashboardLayout user={user} onLogout={onLogout} menuItems={menuItems}>
       <Routes>
-        <Route index element={<ClientOverview />} />
+        <Route index element={<ClientOverview client={user} />} />
         <Route path="downloads" element={<AppDownloadCenter role="client" />} />
         <Route path="logs" element={<ClientCareLogs />} />
         <Route path="billing" element={<ClientBilling />} />
@@ -122,8 +139,43 @@ export default function ClientDashboard({ user, onLogout }: any) {
   );
 }
 
-function ClientOverview() {
+function ClientOverview({ client }: any) {
   const [isHospitalized, setIsHospitalized] = useState(false);
+  const [caregiver, setCaregiver] = useState<any>(null);
+  const [supervisor, setSupervisor] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCareTeam() {
+      if (!client?.assignedStaffId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const cgDoc = await getDoc(doc(db, "users", client.assignedStaffId));
+        if (cgDoc.exists()) {
+          const cgData = cgDoc.data();
+          setCaregiver(cgData);
+
+          if (cgData.supervisorId) {
+            const svDoc = await getDoc(doc(db, "users", cgData.supervisorId));
+            if (svDoc.exists()) {
+              setSupervisor(svDoc.data());
+            }
+          }
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, "users/care-team");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCareTeam();
+  }, [client?.assignedStaffId]);
+
+  const displayName = client.fullName || client.full_name || "Client";
 
   return (
     <div className="space-y-10">
@@ -143,11 +195,11 @@ function ClientOverview() {
        <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center gap-10 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="w-28 h-28 rounded-3xl overflow-hidden bg-slate-100 shrink-0 border-4 border-white shadow-xl relative z-10">
-             <img src="https://images.unsplash.com/photo-1544120190-27583f2274a2?q=80&w=400" alt="Patient" className="w-full h-full object-cover" />
+             <img src={client.profileImage || "https://images.unsplash.com/photo-1544120190-27583f2274a2?q=80&w=400"} alt="Patient" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 relative z-10">
              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-4xl font-black text-slate-900 tracking-tighter">Margaret Stewart</h3>
+                <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{displayName}</h3>
                 <span className={cn(
                   "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
                   isHospitalized ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" : "bg-emerald-50 text-emerald-600 border-emerald-100"
@@ -157,7 +209,7 @@ function ClientOverview() {
              </div>
              <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500" /> Tier 2 Case Protocol</span>
-                <span className="flex items-center gap-2"><Calendar size={14} className="text-slate-300" /> Inspection Passed: 01.03.2026</span>
+                <span className="flex items-center gap-2"><Calendar size={14} className="text-slate-300" /> ID: {client.id?.slice(0, 8)}</span>
              </div>
           </div>
           <div className="flex flex-col gap-4">
@@ -204,41 +256,86 @@ function ClientOverview() {
        </div>
 
        {/* Caregiver Identity Protocol */}
-       <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 group-hover:scale-110 transition-transform duration-1000"></div>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
-             <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-slate-100 border-4 border-white shadow-2xl shrink-0 group-hover:rotate-3 transition-transform">
-                   <img 
-                     src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400" 
-                     alt="Caregiver" 
-                     className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-                   />
-                </div>
-                <div className="text-center md:text-left">
-                   <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
-                      <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Emma Wilson</h3>
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest rounded-full border border-blue-100 shadow-sm">Primary Caregiver</span>
+       {caregiver ? (
+          <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 group-hover:scale-110 transition-transform duration-1000"></div>
+             <div className="flex flex-col gap-10 relative z-10">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+                   <div className="flex flex-col md:flex-row items-center gap-8">
+                      <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-slate-100 border-4 border-white shadow-2xl shrink-0 group-hover:rotate-3 transition-transform">
+                         <img 
+                           src={caregiver.profileImage || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400"} 
+                           alt="Caregiver" 
+                           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                         />
+                      </div>
+                      <div className="text-center md:text-left">
+                         <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">{caregiver.fullName || caregiver.full_name}</h3>
+                            <span className={cn(
+                              "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm",
+                              caregiver.verificationStatus === 'VERIFIED' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-red-50 text-red-600 border-red-100"
+                            )}>
+                              {caregiver.verificationStatus === 'VERIFIED' ? "Cleared for Registry" : "Verification Pending"}
+                            </span>
+                         </div>
+                         <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] leading-none mb-1">Assigned Field Professional</p>
+                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            {caregiver.role === 'CAREGIVER' ? 'HEALTH CARE ASSISTANT' : caregiver.role} • ID: #{caregiver.id?.slice(0, 8)}
+                         </p>
+                      </div>
                    </div>
-                   <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] leading-none mb-1">Field Staff Protocol Analyst</p>
-                   <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-60">HCA Tier II Certified • Clinical ID: #VACS-9021</p>
+                   
+                   <div className="grid sm:grid-cols-2 gap-4">
+                      <CaregiverContactItem 
+                        icon={<Phone size={16} className="text-blue-500" />} 
+                        label="Secure Line" 
+                        value={caregiver.phoneNumber || caregiver.phone || "Encrypted"} 
+                      />
+                      <CaregiverContactItem 
+                        icon={<Mail size={16} className="text-blue-500" />} 
+                        label="Protocol Email" 
+                        value={caregiver.email || "Encrypted"} 
+                      />
+                   </div>
                 </div>
-             </div>
-             
-             <div className="grid sm:grid-cols-2 gap-4">
-                <CaregiverContactItem 
-                  icon={<Phone size={16} className="text-blue-500" />} 
-                  label="Secure Line" 
-                  value="+234 (0) 803 123 4567" 
-                />
-                <CaregiverContactItem 
-                  icon={<Mail size={16} className="text-blue-500" />} 
-                  label="Protocol Email" 
-                  value="e.wilson@vacs-registry.io" 
-                />
+
+                {/* Bio Section */}
+                <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4 flex items-center gap-2">
+                      <User size={14} className="text-blue-500" /> Professional Bio & Clinical Summary
+                   </h4>
+                   <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
+                      {caregiver.bio || "This field professional is a certified member of the VACS registry, trained in advanced ADL support and clinical observation protocols."}
+                   </p>
+                </div>
+
+                {/* Supervising RN */}
+                {supervisor && (
+                   <div className="p-8 border-t-4 border-slate-900 bg-slate-900 text-white rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-8">
+                      <div className="flex items-center gap-6">
+                         <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-xl shadow-blue-500/20">
+                            <BadgeCheck size={32} />
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Supervising Nurse (RN)</p>
+                            <h5 className="text-xl font-black tracking-tight">{supervisor.fullName || supervisor.full_name}</h5>
+                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">RN License Verified • Case Lead</p>
+                         </div>
+                      </div>
+                      <Button variant="ghost" className="h-12 px-8 rounded-full border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-white">Contact Super</Button>
+                   </div>
+                )}
              </div>
           </div>
-       </div>
+       ) : (
+          <div className="p-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
+             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <User size={32} className="text-slate-200" />
+              </div>
+              <h3 className="text-xl font-black text-slate-300 uppercase tracking-widest">Awaiting Staff Assignment</h3>
+           </div>
+        )}
 
        <div className="grid lg:grid-cols-2 gap-10">
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden">

@@ -1,20 +1,16 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Visiting Angels Caregivers Solutions (VACS)
 
-# Run and deploy your AI Studio app
+## Access Links
+- Development URL: [https://ais-dev-agnsikcsp4hwr76hirmhn4-832386282005.europe-west2.run.app](https://ais-dev-agnsikcsp4hwr76hirmhn4-832386282005.europe-west2.run.app)
+- Shared App URL: [https://ais-pre-agnsikcsp4hwr76hirmhn4-832386282005.europe-west2.run.app](https://ais-pre-agnsikcsp4hwr76hirmhn4-832386282005.europe-west2.run.app)
 
-This contains everything you need to run your app locally.
+## Credentials & Access
+### Super Admin
+- URL: `/superadmin`
+- Username: `superadmin`
+- Password: `Mastersafe@2026`
 
-View your app in AI Studio: https://ai.studio/apps/4142ffa6-982f-46d4-8130-026b33c3d4e2
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## How to Access
+1.  **Staff/Client Login**: Use either the Google login button or your registered email/password via the appropriate login portal.
+2.  **Registration**: New users should register via the `Enroll Now` button for clients or the `Staff Registry` links.
+3.  **Super Admin**: Accessible only via the specific Super Admin portal.

@@ -1,40 +1,39 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Heart, Lock, Mail, ArrowLeft, ShieldAlert } from "lucide-react";
-import { Link } from "react-router-dom";
 import { auth, db } from "../../lib/firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  updateProfile
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+
+import Logo from "../../components/ui/Logo";
 
 export default function LoginPage({ adminOnly = false, allowedRole = null }: any) {
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const navigate = useNavigate();
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError("");
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
+  const handleAuthResult = async (user: any, isNewUser = false) => {
       // Fetch user profile from Firestore
       const userDoc = await getDoc(doc(db, "users", user.uid));
       
       if (userDoc.exists()) {
         const profile = userDoc.data();
         if (adminOnly && profile.role !== 'ADMIN') {
-          setError("This access point is restricted to Super Admins only.");
-          setLoading(false);
-          return;
+          throw new Error("This access point is restricted to Super Admins only.");
         }
         if (allowedRole && profile.role !== allowedRole) {
-           setError(`This access point is restricted to ${allowedRole}s only.`);
-           setLoading(false);
-           return;
+           throw new Error(`This access point is restricted to ${allowedRole}s only.`);
         }
         
         // Redirect based on role
@@ -43,8 +42,23 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
         else if (profile.role === 'CAREGIVER') navigate("/dashboard");
         else if (profile.role === 'CLIENT') navigate("/client");
       } else {
-        navigate(`/register/CAREGIVER`);
+        if (isNewUser) {
+           // For new users, we'll send them to completing their profile
+           navigate(`/register/${allowedRole || 'CAREGIVER'}`);
+        } else {
+           navigate(`/register/CAREGIVER`);
+        }
       }
+  }
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError("");
+    const provider = new GoogleAuthProvider();
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await handleAuthResult(result.user);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to authenticate via Google.");
@@ -52,6 +66,30 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
       setLoading(false);
     }
   };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError("");
+
+      try {
+          if (isSignUp) {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            if (fullName) {
+              await updateProfile(userCredential.user, { displayName: fullName });
+            }
+            await handleAuthResult(userCredential.user, true);
+          } else {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            await handleAuthResult(userCredential.user);
+          }
+      } catch (err: any) {
+          console.error(err);
+          setError(err.message || "Authentication failed. Check your credentials.");
+      } finally {
+          setLoading(false);
+      }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 selection:bg-blue-100 font-sans">
@@ -61,15 +99,13 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
             <ArrowLeft size={14} strokeWidth={3} /> Return to Public Front
           </Link>
           <div className="flex justify-center mb-6">
-             <div className="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-slate-200 border-4 border-white">
-                <Heart size={36} fill="white" />
-             </div>
+             <Logo size="lg" />
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter">
-            {adminOnly ? "Control Gate" : "System Access"}
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">
+            {adminOnly ? "Control Gate" : (isSignUp ? "Identity Creation" : "System Access")}
           </h1>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">
-            {adminOnly ? "Root Audit Credentials Required" : "Professional Caregiver Identity Verification"}
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+            {adminOnly ? "Root Audit Credentials Required" : (isSignUp ? "Register Professional ID" : "Identity Verification Node")}
           </p>
         </div>
 
@@ -83,31 +119,73 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
                 <span>{error}</span>
               </div>
             )}
-
-            <Button 
-              onClick={handleGoogleLogin} 
-              className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full bg-white text-slate-900 border-2 border-slate-100 hover:bg-slate-50"
-              disabled={loading}
-            >
-              <img src="https://www.google.com/favicon.ico" className="w-4 h-4 mr-3" alt="Google" />
-              {loading ? "Decrypting..." : "Sign in with Google"}
-            </Button>
             
-            <div className="flex items-center gap-4 py-2">
-               <div className="h-px bg-slate-100 flex-1"></div>
-               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Secure OAuth 2.0</span>
-               <div className="h-px bg-slate-100 flex-1"></div>
-            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+                {isSignUp && (
+                  <input 
+                      type="text"
+                      placeholder="Full Legal Name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                      required
+                  />
+                )}
+                <input 
+                    type="email"
+                    placeholder="Email (Hotmail, Yahoo, etc.)"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                    required
+                />
+                <input 
+                    type="password"
+                    placeholder="Security Key (Password)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                    required
+                />
+                <Button type="submit" className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full bg-blue-900 text-white hover:bg-blue-800" disabled={loading}>
+                    {loading ? "Decrypting..." : (isSignUp ? "Generate Professional ID" : "Verify & Sign In")}
+                </Button>
+            </form>
 
+            {!isSignUp && (
+              <>
+                <div className="flex items-center gap-4 py-4">
+                   <div className="h-px bg-slate-100 flex-1"></div>
+                   <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">OR</span>
+                   <div className="h-px bg-slate-100 flex-1"></div>
+                </div>
+
+                <Button 
+                  onClick={handleGoogleLogin} 
+                  className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full bg-white text-slate-900 border-2 border-slate-100 hover:bg-slate-50"
+                  disabled={loading}
+                >
+                  <img src="https://www.google.com/favicon.ico" className="w-4 h-4 mr-3" alt="Google" />
+                  {loading ? "Decrypting..." : "Sign in with Google"}
+                </Button>
+              </>
+            )}
+            
             <p className="text-[10px] text-center text-slate-400 font-medium leading-relaxed italic">
-              VACS uses zero-trust identity verification. Only white-listed institutional emails gain root access to clinical records.
+              VACS treats all institutional and personal emails with high-grade clinical encryption.
             </p>
           </div>
 
           {!adminOnly && (
             <div className="mt-10 pt-8 border-t border-slate-50 text-center relative z-10">
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                Identity not found? <Link to="/" className="text-blue-600 hover:underline">Apply for Entry</Link>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                {isSignUp ? "Already have a node ID?" : "No ID found?"}{" "}
+                <button 
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-blue-600 hover:underline font-black"
+                >
+                  {isSignUp ? "Return to Sign In" : "Register Now"}
+                </button>
               </p>
             </div>
           )}

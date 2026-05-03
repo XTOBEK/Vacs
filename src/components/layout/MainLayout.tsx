@@ -6,6 +6,8 @@ import { Button } from "../ui/Button";
 import { db, handleFirestoreError, OperationType } from "../../lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
+import Logo from "../ui/Logo";
+
 interface MainLayoutProps {
   children: React.ReactNode;
 }
@@ -50,13 +52,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {cmsBranding?.logoUrl ? (
               <img src={cmsBranding.logoUrl} className="h-10 w-auto object-contain" alt="VACS Logo" />
             ) : (
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
-                <Heart size={22} fill="currentColor" />
-              </div>
+              <Logo size="sm" />
             )}
             <div className="flex flex-col leading-none">
-               <span className="font-black text-xl tracking-tighter text-slate-900">{cmsBranding?.name?.split(' ')[0] || "VACS"}</span>
-               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{cmsBranding?.tagline?.split('.')[0] || "Clinical Care"}</span>
+               <span className="font-black text-xl tracking-tighter text-[#0B1D45]">{cmsBranding?.name?.split(' ')[0] || "VACS"}</span>
+               <span className="text-[10px] font-bold text-[#C5A069] uppercase tracking-widest mt-0.5">{cmsBranding?.tagline?.split('.')[0] || "Clinical Care"}</span>
             </div>
           </Link>
           
@@ -126,15 +126,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-500 to-rose-500 opacity-50"></div>
         <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-16 relative z-10">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-8 text-[#0B1D45]">
               {cmsBranding?.logoUrl ? (
                 <img src={cmsBranding.logoUrl} className="h-10 brightness-0 invert opacity-80" alt="Logo" />
               ) : (
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-xl">
-                  <Heart size={20} fill="currentColor" />
-                </div>
+                <Logo size="sm" inverted />
               )}
-              <span className="font-black text-2xl tracking-tighter">{cmsBranding?.name?.split(' ')[0] || "VACS"}</span>
+              <span className="font-black text-2xl tracking-tighter text-white">{cmsBranding?.name?.split(' ')[0] || "VACS"}</span>
             </div>
             <p className="text-slate-400 font-medium max-w-sm mb-10 text-lg leading-relaxed">
               {cmsBranding?.tagline || "Pioneering safe, accountable home care with professional clinical oversight and digital transparency."}
