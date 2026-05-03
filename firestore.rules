@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { 
+      return isSignedIn() && 
+      (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || 
+       request.auth.token.email == 'princewill.iwuoha@gmail.com'); 
+    }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Entity Validations ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'fullName', 'email', 'role']) &&
+             data.uid is string && data.fullName is string && data.email is string &&
+             data.role in ['ADMIN', 'CAREGIVER', 'CLIENT', 'RN'] &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidClient(data) {
+      return data.keys().hasAll(['clientId', 'name', 'tier', 'status']) &&
+             data.clientId is string && data.name is string &&
+             data.status in ['ACTIVE', 'HOSPITALIZED', 'SUSPENDED'];
+    }
+
+    // --- Collection Rules ---
+
+    match /users/{userId} {
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidUser(incoming()) && userId == request.auth.uid && isValidId(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && 
+                    isValidId(userId) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'kitStatus', 'guarantorStatus', 'region', 'phone', 'summary', 'role']) &&
+                    isValidUser(incoming());
+    }
+
+    match /clients/{clientId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(clientId);
+      allow create: if isAdmin() && isValidId(clientId);
+      allow update: if (isAdmin() || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'pulseClauseActive']))) && isValidId(clientId);
+    }
+
+    match /academy/{trackId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /inventory/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isOwner(incoming().ownerId) || isAdmin());
+    }
+
+    match /cms/{segmentId} {
+      allow read: if true; // Branding/Contact info is public
+      allow write: if isAdmin() && isValidId(segmentId);
+    }
+    
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Core identity for staff, clients, and admins.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "caregiver", "client", "rn"] },
+        "kitStatus": { "type": "string", "enum": ["MISSING", "PENDING", "VERIFIED"] },
+        "guarantorStatus": { "type": "string", "enum": ["PENDING", "VERIFIED"] },
+        "region": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "fullName", "email", "role"]
+    },
+    "ClientRecord": {
+      "title": "Clinical Client Profile",
+      "description": "Details about care recipients and their clinical status.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "HOSPITALIZED", "SUSPENDED"] },
+        "healthScore": { "type": "number" },
+        "pulseClauseActive": { "type": "boolean" },
+        "balance": { "type": "number" }
+      },
+      "required": ["clientId", "name", "tier", "status"]
+    },
+    "AcademyTrack": {
+      "title": "Academy Logic",
+      "description": "Certification and loyalty threshold tracking.",
+      "type": "object",
+      "properties": {
+        "staffId": { "type": "string" },
+        "trackName": { "type": "string" },
+        "progress": { "type": "number" },
+        "isLocked": { "type": "boolean" },
+        "tenureDays": { "type": "number" }
+      },
+      "required": ["staffId", "trackName"]
+    },
+    "InventoryItem": {
+      "title": "Asset Registry",
+      "description": "Medical kits and clinical tools assigned to staff.",
+      "type": "object",
+      "properties": {
+        "itemId": { "type": "string" },
+        "title": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "status": { "type": "string" },
+        "verificationUrl": { "type": "string" }
+      },
+      "required": ["itemId", "title", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Core system users"
+    },
+    "/clients/{clientId}": {
+      "schema": "ClientRecord",
+      "description": "Registry of patients/clients"
+    },
+    "/academy/{trackId}": {
+      "schema": "AcademyTrack",
+      "description": "Certification tracking"
+    },
+    "/inventory/{itemId}": {
+      "schema": "InventoryItem",
+      "description": "Kit audits"
+    }
+  }
+}

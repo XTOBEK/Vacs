@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Button } from "../../components/ui/Button";
+import { auth, db, OperationType, handleFirestoreError } from "../../lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { 
   Heart, 
   Stethoscope, 
@@ -19,6 +21,26 @@ export default function RegistrationPage() {
   const { role } = useParams();
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    summary: ""
+  });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (auth.currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: auth.currentUser?.displayName || "",
+        email: auth.currentUser?.email || ""
+      }));
+    } else {
+      // If not logged in, they should go to login first to get a UID
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const roles: any = {
     client: {
@@ -26,6 +48,7 @@ export default function RegistrationPage() {
       icon: Heart,
       color: "text-rose-500",
       bg: "bg-rose-50",
+      role: "CLIENT",
       description: "Begin your journey towards safe, professional home care."
     },
     rn: {
@@ -33,6 +56,7 @@ export default function RegistrationPage() {
       icon: Stethoscope,
       color: "text-blue-500",
       bg: "bg-blue-50",
+      role: "RN",
       description: "Join our network of clinical oversight professionals."
     },
     caregiver: {
@@ -40,19 +64,39 @@ export default function RegistrationPage() {
       icon: UserPlus,
       color: "text-emerald-500",
       bg: "bg-emerald-50",
+      role: "CAREGIVER",
       description: "Enlist as an HCA/SCA and start your clinical certification."
     }
   };
 
-  const currentRole = roles[role || "client"] || roles.client;
+  const currentRole = roles[role || "caregiver"] || roles.caregiver;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth.currentUser) return;
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    const userId = auth.currentUser.uid;
+    const path = `users/${userId}`;
+
+    try {
+      await setDoc(doc(db, "users", userId), {
+        uid: userId,
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        role: currentRole.role,
+        summary: formData.summary,
+        kitStatus: 'MISSING',
+        guarantorStatus: 'PENDING',
+        createdAt: new Date().toISOString()
+      });
       setSuccess(true);
-    }, 1500);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {
@@ -109,6 +153,8 @@ export default function RegistrationPage() {
                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                    <input 
                      type="text"
+                     value={formData.fullName}
+                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                      className="w-full pl-12 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all text-sm font-bold text-slate-900"
                      required
                    />
@@ -120,6 +166,8 @@ export default function RegistrationPage() {
                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                    <input 
                      type="tel"
+                     value={formData.phone}
+                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                      className="w-full pl-12 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all text-sm font-bold text-slate-900"
                      required
                    />
@@ -133,7 +181,9 @@ export default function RegistrationPage() {
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
                   type="email"
-                  className="w-full pl-12 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                  value={formData.email}
+                  readOnly
+                  className="w-full pl-12 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none text-sm font-bold text-slate-400 cursor-not-allowed"
                   required
                 />
               </div>
@@ -144,6 +194,8 @@ export default function RegistrationPage() {
               <div className="relative">
                 <FileText className="absolute left-4 top-6 text-slate-400" size={16} />
                 <textarea 
+                  value={formData.summary}
+                  onChange={(e) => setFormData({...formData, summary: e.target.value})}
                   className="w-full pl-12 pr-4 py-5 h-32 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all text-sm font-bold text-slate-900 resize-none"
                   required
                 />

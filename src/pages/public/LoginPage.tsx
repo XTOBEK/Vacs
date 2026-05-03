@@ -3,45 +3,48 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Heart, Lock, Mail, ArrowLeft, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
+import { auth, db } from "../../lib/firebase";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
-export default function LoginPage({ onLogin, adminOnly = false }: any) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function LoginPage({ adminOnly = false }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setError("");
+    const provider = new GoogleAuthProvider();
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-      if (res.ok) {
-        const user = await res.json();
-        if (adminOnly && user.role !== 'ADMIN') {
+      // Fetch user profile from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      
+      if (userDoc.exists()) {
+        const profile = userDoc.data();
+        if (adminOnly && profile.role !== 'ADMIN') {
           setError("This access point is restricted to Super Admins only.");
           setLoading(false);
           return;
         }
-        onLogin(user);
         
         // Redirect based on role
-        if (user.role === 'ADMIN') navigate("/admin");
-        else if (user.role === 'RN') navigate("/rn");
-        else if (user.role === 'CAREGIVER') navigate("/dashboard");
-        else if (user.role === 'CLIENT') navigate("/client");
+        if (profile.role === 'ADMIN') navigate("/vacs-control-gate");
+        else if (profile.role === 'RN') navigate("/rn");
+        else if (profile.role === 'CAREGIVER') navigate("/dashboard");
+        else if (profile.role === 'CLIENT') navigate("/client");
       } else {
-        setError("Invalid email or password");
+        // New user, redirect to role selection if they don't have one
+        // For now, let's assume they need to register
+        navigate(`/register/CAREGIVER`);
       }
-    } catch (err) {
-      setError("Connection error. Please check your server.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to authenticate via Google.");
     } finally {
       setLoading(false);
     }
@@ -70,7 +73,7 @@ export default function LoginPage({ onLogin, adminOnly = false }: any) {
         <div className="bg-white rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] border border-slate-100 p-10 md:p-12 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16"></div>
           
-          <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+          <div className="relative z-10 space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-100 text-red-600 text-[11px] font-black uppercase tracking-tight p-4 rounded-2xl flex items-center gap-3 animate-shake">
                 <ShieldAlert size={16} className="shrink-0" />
@@ -78,44 +81,25 @@ export default function LoginPage({ onLogin, adminOnly = false }: any) {
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">ID Directive (Email)</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                  placeholder="agent@vacs.io"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Secure Protocol (Pass)</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-            </div>
-
             <Button 
-              type="submit" 
-              className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full"
+              onClick={handleGoogleLogin} 
+              className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full bg-white text-slate-900 border-2 border-slate-100 hover:bg-slate-50"
               disabled={loading}
             >
-              {loading ? "Decrypting..." : adminOnly ? "Unlock Control" : "Enter System"}
+              <img src="https://www.google.com/favicon.ico" className="w-4 h-4 mr-3" alt="Google" />
+              {loading ? "Decrypting..." : "Sign in with Google"}
             </Button>
-          </form>
+            
+            <div className="flex items-center gap-4 py-2">
+               <div className="h-px bg-slate-100 flex-1"></div>
+               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Secure OAuth 2.0</span>
+               <div className="h-px bg-slate-100 flex-1"></div>
+            </div>
+
+            <p className="text-[10px] text-center text-slate-400 font-medium leading-relaxed italic">
+              VACS uses zero-trust identity verification. Only white-listed institutional emails gain root access to clinical records.
+            </p>
+          </div>
 
           {!adminOnly && (
             <div className="mt-10 pt-8 border-t border-slate-50 text-center relative z-10">
