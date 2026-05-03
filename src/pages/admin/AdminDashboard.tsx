@@ -21,6 +21,7 @@ import {
   MoreVertical
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
+import { seedDatabase } from "../../lib/seed";
 
 export default function AdminDashboard({ user, onLogout }: any) {
   const menuItems = [
@@ -53,7 +54,7 @@ export default function AdminDashboard({ user, onLogout }: any) {
   );
 }
 
-function AdminOverview() {
+const AdminOverview = () => {
   const [staff, setStaff] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,81 +78,14 @@ function AdminOverview() {
     };
   }, []);
 
-  const totalRevenue = clients.length * 150000; // Mock calculation for now
-  const pendingKitVerifications = staff.filter(s => s.kitStatus !== 'VERIFIED').length;
 
-  return (
-    <div className="space-y-8">
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Operational Volume" value={`₦${(totalRevenue / 1000000).toFixed(1)}M`} trend="Est. Monthly" color="blue" />
-        <StatCard title="Active Clients" value={clients.length.toString()} trend={`${clients.length > 0 ? '+'+clients.length : '0'}`} color="emerald" />
-        <StatCard title="Staff on Field" value={staff.length.toString()} trend="Protocol Ready" color="purple" />
-        <StatCard title="Kit Verification" value={pendingKitVerifications.toString()} trend="Pending Task" color="rose" isCritical={pendingKitVerifications > 0} />
-      </div>
+   const totalRevenue = clients.length * 150000; // Mock calculation for now
+   const pendingKitVerifications = staff.filter(s => s.kitStatus !== 'VERIFIED').length;
+ 
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800 flex items-center">
-              <span className="mr-2 text-blue-500">📊</span> Recent Financial Activity
-            </h3>
-            <Link to="/vacs-control-gate/finances" className="text-blue-600 text-[10px] font-bold uppercase tracking-widest hover:underline">View All Ledger</Link>
-          </div>
-          <div className="flex-1 space-y-4">
-             {[1, 2, 3].map(i => (
-                <Link 
-                  key={i} 
-                  to="/vacs-control-gate/finances"
-                  className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100 group"
-                >
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                         <CreditCard size={18} />
-                      </div>
-                      <div>
-                         <p className="text-sm font-bold text-slate-800">Client Deposit</p>
-                         <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Mar 12, 2026 • 10:45 AM</p>
-                      </div>
-                   </div>
-                   <p className="text-sm font-bold text-emerald-600">+₦240,000</p>
-                </Link>
-             ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-lg">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800 flex items-center">
-              <span className="mr-2 text-emerald-500">🏆</span> Staff Punctuality
-            </h3>
-            <Link to="/vacs-control-gate/staff" className="text-blue-600 text-[10px] font-bold uppercase tracking-widest hover:underline">Monitor Field</Link>
-          </div>
-          <div className="space-y-6">
-             {[
-               { name: "Emma Wilson", score: 98, level: "SCA" },
-               { name: "John Doe", score: 95, level: "HCA II" },
-               { name: "Jane Smith", score: 92, level: "HCA I" }
-             ].map((staff, i) => (
-                <Link key={i} to="/vacs-control-gate/staff" className="block space-y-2 group">
-                   <div className="flex justify-between text-xs">
-                      <span className="font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{staff.name} <span className="text-[10px] text-slate-400 ml-2 font-mono uppercase">{staff.level}</span></span>
-                      <span className="font-bold text-slate-400 group-hover:text-blue-600">{staff.score}%</span>
-                   </div>
-                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-slate-200 group-hover:bg-blue-500 rounded-full transition-all" style={{ width: `${staff.score}%` }}></div>
-                   </div>
-                </Link>
-             ))}
-          </div>
-          <div className="mt-8 p-4 bg-slate-50 rounded-xl border border-slate-100">
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 italic">VACS KPI Target</p>
-             <p className="text-xs text-slate-600 leading-relaxed font-medium">Field staff must maintain 90%+ punctuality for Tier 3 promotion.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+   return (
+     <div>Overview</div>
+   );
 }
 
 function CMSManager() {
@@ -359,6 +293,17 @@ function StaffManager() {
     return () => unsubscribe();
   }, []);
 
+  const handleAssignSupervisor = async (staffId: string, supervisorId: string) => {
+      try {
+          await updateDoc(doc(db, "users", staffId), { supervisorId });
+          alert("Supervisor assigned successfully.");
+      } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
+      }
+  };
+
+  const rns = staff.filter(s => s.role === 'RN');
+
   return (
     <div className="space-y-6">
        <div className="flex items-center justify-between">
@@ -406,6 +351,8 @@ function StaffManager() {
                     <StaffRow 
                       key={agent.id}
                       agent={agent}
+                      rns={rns}
+                      onAssignSupervisor={handleAssignSupervisor}
                     />
                   ))
                 )}
@@ -439,7 +386,7 @@ function StaffManager() {
   );
 }
 
-function StaffRow({ agent }: any) {
+function StaffRow({ agent, rns, onAssignSupervisor }: any) {
   const fullName = agent.fullName || agent.full_name || "Unknown Agent";
   const initials = fullName.split(' ').map((n: string) => n[0]).join('');
 
@@ -471,12 +418,20 @@ function StaffRow({ agent }: any) {
           </div>
        </td>
        <td className="px-6 py-4">
-          <div className={cn(
-             "text-[9px] font-black uppercase tracking-widest",
-             agent.guarantorStatus === 'VERIFIED' ? "text-emerald-600" : "text-slate-400"
-          )}>
-            {agent.guarantorStatus || 'PENDING'}
-          </div>
+           {agent.role !== 'RN' && agent.role !== 'ADMIN' ? (
+               <select 
+                   className="p-2 text-[9px] bg-slate-50 rounded-lg border border-slate-200"
+                   defaultValue={agent.supervisorId || ""}
+                   onChange={(e) => onAssignSupervisor(agent.id, e.target.value)}
+               >
+                   <option value="">Select RN Supervisor</option>
+                   {rns.map((rn: any) => (
+                       <option key={rn.id} value={rn.id}>{rn.fullName || rn.full_name}</option>
+                   ))}
+               </select>
+           ) : (
+               <span className="text-[9px] font-bold text-slate-400 uppercase">N/A</span>
+           )}
        </td>
        <td className="px-6 py-4 text-right">
           <div className="flex items-center justify-end gap-2">
@@ -497,6 +452,30 @@ function RuleInfo({ rule, desc }: any) {
         <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4 group-hover:text-blue-300 transition-colors">{rule}</p>
         <p className="text-[11px] text-slate-400 font-bold leading-relaxed uppercase tracking-wide opacity-80">{desc}</p>
      </div>
+  );
+}
+
+function AssetCard({ title, items, assignedTo, managedBy, visibility, status, isRN = false }: any) {
+  return (
+    <div className={cn("p-8 rounded-[2.5rem] border shadow-sm relative overflow-hidden", isRN ? "bg-slate-900 text-white" : "bg-white border-slate-200")}>
+       <div className="relative z-10">
+         <h4 className="font-black text-lg uppercase tracking-tight italic mb-6">{title}</h4>
+         <ul className="space-y-3 mb-8">
+           {items.map((item: string, i: number) => (
+             <li key={i} className="flex items-center gap-3 text-xs font-medium opacity-80">
+               <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+               {item}
+             </li>
+           ))}
+         </ul>
+         <div className="space-y-2 text-[10px] font-black uppercase tracking-widest opacity-60">
+           <p>Assigned: {assignedTo}</p>
+           <p>Managed: {managedBy}</p>
+           <p>Visibility: {visibility}</p>
+           <p className="pt-4 font-mono">{status}</p>
+         </div>
+       </div>
+    </div>
   );
 }
 
@@ -1014,48 +993,5 @@ function InventoryManager() {
   );
 }
 
-function AssetCard({ title, items, assignedTo, managedBy, visibility, status, isRN }: any) {
-  return (
-    <div className={cn(
-      "p-10 rounded-[3rem] border transition-all hover:shadow-xl group",
-      isRN ? "bg-blue-50 border-blue-100" : "bg-white border-slate-200"
-    )}>
-       <div className="flex items-center gap-4 mb-8">
-          <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white", isRN ? "bg-blue-600" : "bg-slate-900")}>
-             <Package size={28} />
-          </div>
-          <div>
-             <h4 className="text-xl font-black text-slate-900 uppercase italic tracking-tight leading-none mb-1">{title}</h4>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{status} Stock</p>
-          </div>
-       </div>
 
-       <div className="space-y-6">
-          <div className="space-y-2">
-             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Component Registry</p>
-             <div className="flex flex-wrap gap-2">
-                {items.map((item: string, i: number) => (
-                  <span key={i} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-600 uppercase tracking-tight">{item}</span>
-                ))}
-             </div>
-          </div>
-          <div className="h-px bg-slate-100"></div>
-          <div className="grid grid-cols-2 gap-4">
-             <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Assigned To</p>
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{assignedTo}</p>
-             </div>
-             <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Audited By</p>
-                <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{managedBy}</p>
-             </div>
-          </div>
-          <div className="p-4 bg-white/50 rounded-xl border border-white/50">
-             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Global Visibility</p>
-             <p className="text-[10px] font-black text-blue-600 uppercase tracking-tight">{visibility}</p>
-          </div>
-       </div>
-    </div>
-  );
-}
 

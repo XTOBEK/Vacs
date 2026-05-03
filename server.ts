@@ -248,6 +248,20 @@ async function startServer() {
     `).run();
   }
 
+  // Referrals
+  app.get("/api/referrals/:referrerId", (req, res) => {
+    const referrals = db.prepare("SELECT * FROM referrals WHERE referrer_id = ?").get(req.params.referrerId);
+    res.json(referrals || { leads_count: 0, commissions_total: 0, code: "N/A" });
+  });
+
+  app.post("/api/referrals/create", (req, res) => {
+    const { referrer_id, code } = req.body;
+    const id = `ref-${Date.now()}`;
+    db.prepare("INSERT INTO referrals (id, referrer_id, code) VALUES (?, ?, ?)")
+      .run(id, referrer_id, code);
+    res.json({ success: true, id });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

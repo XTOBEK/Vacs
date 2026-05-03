@@ -71,7 +71,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
               </Link>
             ))}
             <div className="h-4 w-px bg-slate-200"></div>
-            <Link to="/login" className="hover:text-blue-600 transition-colors text-slate-900">Portal Access</Link>
+            <Link to="/superadmin" className="text-rose-500 hover:text-rose-400 transition-colors">Super Admin</Link>
+            <Link to="/staff-login" className="hover:text-blue-600 transition-colors text-slate-900">Staff</Link>
+            <Link to="/client-login" className="hover:text-blue-600 transition-colors text-slate-900">Client</Link>
             <Link to="/register/client">
               <Button size="sm" className="rounded-full shadow-xl shadow-blue-500/10 h-10 px-6">Enroll Now</Button>
             </Link>
@@ -103,7 +105,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   </Link>
                 ))}
                 <div className="h-px bg-slate-100 w-full"></div>
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Portal Access</Link>
+                <Link to="/superadmin" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-rose-500">Super Admin</Link>
+                <Link to="/staff-login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Staff Login</Link>
+                <Link to="/client-login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Client Login</Link>
                 <Link to="/register/client" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full rounded-full h-12 shadow-md">Enroll Now</Button>
                 </Link>
@@ -150,6 +154,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <li><Link to="/register/rn" className="hover:text-white transition-colors">RN Application</Link></li>
               <li><Link to="/register/caregiver" className="hover:text-white transition-colors">Field Staff Registry</Link></li>
               <li><Link to="/plans" className="hover:text-white transition-colors">Care Packages</Link></li>
+              <li className="pt-2"><Link to="/superadmin" className="text-rose-500 hover:text-rose-400 transition-colors">Super Admin Portal</Link></li>
+              <li><Link to="/staff-login" className="hover:text-white transition-colors">Staff Login</Link></li>
+              <li><Link to="/client-login" className="hover:text-white transition-colors">Client Login</Link></li>
             </ul>
           </div>
           <div>
@@ -165,8 +172,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 block mb-1">© 2026 {cmsBranding?.name || "Visiting Angels Caregivers Solutions"}</span>
               <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-700">
                  <MapPin size={10} className="text-blue-500" />
-                 <span>{cmsContact?.address || "Lagos, Lagos State, Nigeria"}</span>
+                 <span>{cmsContact?.address || "HQ: Owerri, Imo State, Nigeria"} | +234 806 214 6613</span>
               </div>
+              <p className="max-w-lg mt-4 text-[10px] font-medium text-slate-700 leading-tight">
+                 <span className="font-black text-rose-500 uppercase tracking-widest block mb-1">Non-Medical Disclaimer:</span>
+                 Visiting Angels Caregivers Solutions is headquartered in Owerri but operates a Virtual Care Network that allows us to provide supervised support across Anambra, Imo, and beyond. This platform handles administrative coordination; physical care is always supervised by our Owerri-certified RN team.
+              </p>
            </div>
            
            <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 order-1 lg:order-2">

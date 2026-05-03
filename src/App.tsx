@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { auth, db } from "./lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import SuperAdminLogin from "./pages/public/SuperAdminLogin";
 import LandingPage from "./pages/public/LandingPage";
 import LoginPage from "./pages/public/LoginPage";
 import RegistrationPage from "./pages/public/RegistrationPage";
@@ -74,6 +75,9 @@ export default function App() {
         <Route path="/plans" element={<PricingPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/superadmin" element={<SuperAdminLogin />} />
+        <Route path="/staff-login" element={<LoginPage allowedRole="RN" />} />
+        <Route path="/client-login" element={<LoginPage allowedRole="CLIENT" />} />
         <Route path="/register/:role" element={<RegistrationPage />} />
         
         {/* Protected Routes */}

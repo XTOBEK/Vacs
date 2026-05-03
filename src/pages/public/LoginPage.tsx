@@ -7,7 +7,7 @@ import { auth, db } from "../../lib/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-export default function LoginPage({ adminOnly = false }: any) {
+export default function LoginPage({ adminOnly = false, allowedRole = null }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -31,6 +31,11 @@ export default function LoginPage({ adminOnly = false }: any) {
           setLoading(false);
           return;
         }
+        if (allowedRole && profile.role !== allowedRole) {
+           setError(`This access point is restricted to ${allowedRole}s only.`);
+           setLoading(false);
+           return;
+        }
         
         // Redirect based on role
         if (profile.role === 'ADMIN') navigate("/vacs-control-gate");
@@ -38,8 +43,6 @@ export default function LoginPage({ adminOnly = false }: any) {
         else if (profile.role === 'CAREGIVER') navigate("/dashboard");
         else if (profile.role === 'CLIENT') navigate("/client");
       } else {
-        // New user, redirect to role selection if they don't have one
-        // For now, let's assume they need to register
         navigate(`/register/CAREGIVER`);
       }
     } catch (err: any) {
