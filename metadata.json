@@ -1,0 +1,6 @@
+{
+  "name": "VACS - Visiting Angels Caregivers Solutions",
+  "description": "A comprehensive Home Care Management System for safe, dignified, and accountable non-medical home care, clinically overseen by a Registered Nurse.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["CMS", "Clinical Alerts", "Financial Management", "LMS", "Field App"]
+}
