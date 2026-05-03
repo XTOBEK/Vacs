@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Lock, User, ArrowLeft } from "lucide-react";
 
@@ -24,6 +24,9 @@ export default function SuperAdminLogin() {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
       <div className="w-full max-w-sm bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800">
+        <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white mb-8 transition-colors">
+          <ArrowLeft size={14} strokeWidth={3} /> Return to Home
+        </Link>
         <h1 className="text-2xl font-black mb-8 italic uppercase tracking-tighter">Super Admin Gate</h1>
         <form onSubmit={handleLogin} className="space-y-6">
           {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
