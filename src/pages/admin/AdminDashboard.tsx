@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
 import { auth, db, handleFirestoreError, OperationType } from "../../lib/firebase";
-import { collection, onSnapshot, query, doc, updateDoc, addDoc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, doc, updateDoc, addDoc } from "firebase/firestore";
 import { 
   LayoutDashboard, 
   Users, 
@@ -96,9 +96,6 @@ const AdminOverview = ({ user }: any) => {
       return;
     }
     
-    console.log("Current user details:", user);
-    getDoc(doc(db, "users", user.uid)).then(doc => console.log("Firestore user data:", doc.data()));
-
     let unsubStaff = () => {};
     let unsubClients = () => {};
 

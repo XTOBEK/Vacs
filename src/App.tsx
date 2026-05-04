@@ -32,7 +32,9 @@ export default function App() {
       if (firebaseUser) {
         // Fetch user profile from Firestore
         try {
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          const userRef = doc(db, "users", firebaseUser.uid);
+          const userDoc = await getDoc(userRef);
+          console.log("Logged in user:", firebaseUser.uid, "Firestore data:", userDoc.data());
           if (userDoc.exists()) {
             setUser({ ...firebaseUser, ...userDoc.data() });
           } else if (firebaseUser.email === 'princewill.iwuoha@gmail.com') {
@@ -42,7 +44,7 @@ export default function App() {
             setUser({ ...firebaseUser, needsProfile: true });
           }
         } catch (error) {
-          console.error("Error fetching user profile:", error);
+          handleFirestoreError(error, OperationType.GET, "users/" + firebaseUser.uid);
           setUser(firebaseUser);
         }
       } else {
