@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
 import { auth, db, handleFirestoreError, OperationType } from "../../lib/firebase";
-import { collection, onSnapshot, query, doc, updateDoc, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, doc, updateDoc, addDoc, getDoc } from "firebase/firestore";
 import { 
   LayoutDashboard, 
   Users, 
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { CaregiverAssignment } from "../../components/CaregiverAssignment";
+import { TemplateEditor } from "../../components/admin/TemplateEditor";
 import { seedDatabase } from "../../lib/seed";
 
 const ClinicalLoginRequired = ({ title, description, icon: Icon }: any) => (
@@ -64,13 +65,13 @@ export default function AdminDashboard({ user, onLogout }: any) {
         </div>
       )}
       <Routes>
-        <Route index element={<AdminOverview />} />
+        <Route index element={<AdminOverview user={user} />} />
         <Route path="downloads" element={<AppDownloadCenter role="admin" />} />
-        <Route path="cms" element={<CMSManager />} />
-        <Route path="staff" element={<StaffManager />} />
-        <Route path="clients" element={<ClientManager />} />
-        <Route path="lms" element={<AcademyManager />} />
-        <Route path="inventory" element={<InventoryManager />} />
+        <Route path="cms" element={<CMSManager user={user} />} />
+        <Route path="staff" element={<StaffManager user={user} />} />
+        <Route path="clients" element={<ClientManager user={user} />} />
+        <Route path="lms" element={<AcademyManager user={user} />} />
+        <Route path="inventory" element={<InventoryManager user={user} />} />
         <Route path="scheduling" element={<div className="p-12 text-center text-gray-400">Shift Logistics Control</div>} />
         <Route path="finances" element={<FinancialManager />} />
         <Route path="*" element={<div className="p-12 text-center text-gray-400">Section Under Construction</div>} />
@@ -79,28 +80,34 @@ export default function AdminDashboard({ user, onLogout }: any) {
   );
 }
 
-const AdminOverview = () => {
+const AdminOverview = ({ user }: any) => {
   const [staff, setStaff] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  if (!auth.currentUser) {
+  if (!user) {
     return <ClinicalLoginRequired title="Overview Node Locked" description="An active clinical session is mandatory to access institutional metrics." icon={ShieldAlert} />;
   }
 
   useEffect(() => {
     // If not authenticated, we'll just use empty lists or mock data from seed if needed
-    if (!auth.currentUser) {
+    if (!user) {
       setLoading(false);
       return;
     }
+    
+    console.log("Current user details:", user);
+    getDoc(doc(db, "users", user.uid)).then(doc => console.log("Firestore user data:", doc.data()));
 
-    const unsubStaff = onSnapshot(collection(db, "users"), (snapshot) => {
+    let unsubStaff = () => {};
+    let unsubClients = () => {};
+
+    unsubStaff = onSnapshot(collection(db, "users"), (snapshot) => {
       setStaff(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     }, (error) => {
       console.warn("Firestore access restricted:", error.message);
     });
-    const unsubClients = onSnapshot(collection(db, "clients"), (snapshot) => {
+    unsubClients = onSnapshot(collection(db, "clients"), (snapshot) => {
       setClients(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }, (error) => {
@@ -111,7 +118,7 @@ const AdminOverview = () => {
       unsubStaff();
       unsubClients();
     };
-  }, []);
+  }, [user]);
 
   const totalRevenue = clients.length > 0 ? clients.length * 150000 : 250000000; 
    const pendingKitVerifications = staff.length > 0 ? staff.filter(s => s.kitStatus !== 'VERIFIED').length : 12;
@@ -168,8 +175,8 @@ const AdminOverview = () => {
    );
 }
 
-function CMSManager() {
-  if (!auth.currentUser) {
+function CMSManager({ user }: any) {
+  if (!user) {
     return <ClinicalLoginRequired title="CMS Node Locked" description="Direct registry modification requires an active clinical session for cryptographic signing." icon={Edit} />;
   }
   
@@ -179,7 +186,7 @@ function CMSManager() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth.currentUser) {
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -197,7 +204,7 @@ function CMSManager() {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleSave = async (segment: string, data: any) => {
     setIsSaving(true);
@@ -239,6 +246,7 @@ function CMSManager() {
             <CMSNavItem active={activeSegment === 'services'} onClick={() => setActiveSegment('services')} label="Service Tiers" />
             <CMSNavItem active={activeSegment === 'faq'} onClick={() => setActiveSegment('faq')} label="Clinical FAQ" />
             <CMSNavItem active={activeSegment === 'contact'} onClick={() => setActiveSegment('contact')} label="Contact Node" />
+            <CMSNavItem active={activeSegment === 'templates'} onClick={() => setActiveSegment('templates')} label="Email Templates" />
             <CMSNavItem active={activeSegment === 'images'} onClick={() => setActiveSegment('images')} label="Asset Registry" />
          </div>
 
@@ -312,6 +320,10 @@ function CMSManager() {
               </div>
             )}
             
+            {activeSegment === 'templates' && (
+              <TemplateEditor />
+            )}
+            
             {/* Other segments can follow similar pattern */}
             {activeSegment !== 'branding' && activeSegment !== 'contact' && (
               <div className="flex flex-col gap-8 h-full items-center justify-center">
@@ -361,15 +373,19 @@ function ChevronRight({ size = 20, className = "" }: any) {
   );
 }
 
-function StaffManager() {
+function StaffManager({ user }: any) {
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  if (!auth.currentUser) {
+  if (!user) {
     return <ClinicalLoginRequired title="Staff Registry Locked" description="Privacy regulations require an authenticated clinical session to view field staff identities." icon={Users} />;
   }
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     const q = query(collection(db, "users"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const staffList = snapshot.docs.map(doc => ({
@@ -384,7 +400,7 @@ function StaffManager() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleAddStaff = async () => {
       const email = prompt("Enter agent email:");
@@ -807,32 +823,48 @@ function RateCard({ tier, rate, description }: any) {
   );
 }
 
-function ClientManager() {
+function ClientManager({ user }: any) {
   const [activeTab, setActiveTab] = React.useState("registry");
   const [clients, setClients] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  if (!auth.currentUser) {
+  if (!user) {
     return <ClinicalLoginRequired title="Client Registry Shielded" description="Institutional privacy protocols: An active clinical session is mandatory to access client diagnostic logs." icon={ShieldAlert} />;
   }
 
   useEffect(() => {
-    if (!auth.currentUser) {
+    if (!user) {
       setLoading(false);
       return;
     }
-    const qClients = query(collection(db, "clients"));
-    const unsubClients = onSnapshot(qClients, (snapshot) => {
-      setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    let unsubClients: () => void = () => {};
+    let unsubStaff: () => void = () => {};
 
+    // --- Clients ---
+    if (auth.currentUser?.email === "princewill.iwuoha@gmail.com") {
+      const qClients = query(collection(db, "clients"));
+      unsubClients = onSnapshot(qClients, (snapshot) => {
+        setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        handleFirestoreError(error, OperationType.LIST, "clients");
+      });
+    }
+    
+    // --- Staff ---
     const qStaff = query(collection(db, "users"));
-    const unsubStaff = onSnapshot(qStaff, (snapshot) => {
+    unsubStaff = onSnapshot(qStaff, (snapshot) => {
       setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "users");
+      setLoading(false);
     });
-    return () => { unsubClients(); unsubStaff(); };
+
+    return () => {
+      unsubClients();
+      unsubStaff();
+    };
   }, []);
 
   if (loading) return <div>Loading...</div>;
@@ -1014,8 +1046,8 @@ function ClientManager() {
   );
 }
 
-function AcademyManager() {
-  if (!auth.currentUser) {
+function AcademyManager({ user }: any) {
+  if (!user) {
     return <ClinicalLoginRequired title="Academy Node Offline" description="Certification tracking and clinical training modules require a verified professional node." icon={GraduationCap} />;
   }
   return (
@@ -1098,8 +1130,8 @@ function AcademyManager() {
   );
 }
 
-function InventoryManager() {
-  if (!auth.currentUser) {
+function InventoryManager({ user }: any) {
+  if (!user) {
     return <ClinicalLoginRequired title="Inventory Node Masked" description="Medical equipment ledger and field kit audits require a synchronized clinical session." icon={Package} />;
   }
   return (

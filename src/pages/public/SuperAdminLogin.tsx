@@ -39,13 +39,13 @@ export default function SuperAdminLogin() {
           
           <h1 className="text-2xl font-black mb-8 italic uppercase tracking-tighter relative z-10 text-white flex items-center gap-3">
              <span className="w-1 h-8 bg-[#C5A069] rounded-full"></span>
-             Super Admin Gate
+             Secure Admin Login
           </h1>
           
           <form onSubmit={handleLogin} className="space-y-6 relative z-10">
             {error && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Oracle Node Key</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Admin Username</label>
             <input 
               className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-[#C5A069] font-black tracking-widest focus:ring-2 focus:ring-[#C5A069] outline-none transition-all"
               value={username}
@@ -54,7 +54,7 @@ export default function SuperAdminLogin() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Security cipher</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Password</label>
             <input 
               type="password"
               className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-[#C5A069] font-black tracking-widest focus:ring-2 focus:ring-[#C5A069] outline-none transition-all"
@@ -63,7 +63,7 @@ export default function SuperAdminLogin() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" className="w-full h-14 bg-[#C5A069] text-[#0B1D45] rounded-full font-black uppercase tracking-[0.2em] shadow-xl shadow-[#C5A069]/20 hover:bg-[#B49158] transition-all">Authenticate Node</Button>
+          <Button type="submit" className="w-full h-14 bg-[#C5A069] text-[#0B1D45] rounded-full font-black uppercase tracking-[0.2em] shadow-xl shadow-[#C5A069]/20 hover:bg-[#B49158] transition-all">Sign In</Button>
         </form>
       </div>
     </div>

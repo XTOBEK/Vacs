@@ -66,9 +66,17 @@ service cloud.firestore {
         }
     }
 
+    match /clients/{clientId} {
+        allow read, write: if isAdmin();
+    }
+
     match /settings/global {
         allow read: if isSignedIn();
         allow write: if isAdmin();
+    }
+
+    match /templates/{templateId} {
+        allow read, write: if isAdmin();
     }
   }
 }
