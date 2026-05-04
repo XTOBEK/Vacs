@@ -22,10 +22,10 @@ This file is your project roadmap.
 - [x] Firestore security rules (initial draft)
 
 ## In Progress
-- [ ] Implement "Link Clinical Identity" workflow
-    - [ ] Create UI for user to enter clinical details
-    - [ ] Add logic to save clinical details to Firestore
-    - [ ] Ensure security rules allow users to update their own clinical data
+- [x] Implement "Link Clinical Identity" workflow
+    - [x] Create UI for user to enter clinical details
+    - [x] Add logic to save clinical details to Firestore
+    - [x] Ensure security rules allow users to update their own clinical data
 - [ ] Full website diagnosis (links, buttons, navigation)
 - [ ] Refine Firestore security rules (Red Team Audit)
 

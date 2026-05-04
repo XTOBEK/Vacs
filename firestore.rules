@@ -36,7 +36,7 @@ service cloud.firestore {
         allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
         
         allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin())
-            && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'lastLocation', 'status', 'assignedCaregiverId', 'verificationStatus', 'kitStatus', 'supervisorId'])
+            && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'lastLocation', 'status', 'assignedCaregiverId', 'verificationStatus', 'kitStatus', 'supervisorId', 'clinicalData'])
             && (incoming().status == existing().status || isAdmin());
             
         match /wallet/main {
