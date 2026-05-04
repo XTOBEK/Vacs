@@ -33,7 +33,19 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isFullscreenMode, setIsFullscreenMode] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    // Basic auto-collapse logic if path contains 'estate' or 'map'
+    if (location.pathname.includes('estate') || location.pathname.includes('map')) {
+       setIsFullscreenMode(true);
+       setIsSidebarExpanded(false);
+    } else {
+       setIsFullscreenMode(false);
+       setIsSidebarExpanded(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!auth.currentUser) return;

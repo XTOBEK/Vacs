@@ -18,10 +18,10 @@ import { cn } from "../../lib/utils";
 
 export default function RNDashboard({ user, onLogout }: any) {
   const menuItems = [
-    { path: "/rn", label: "Clinical Center", icon: Stethoscope },
+    { path: "/rn", label: "Patient Oversight", icon: Stethoscope },
     { path: "/rn/downloads", label: "App Gateway", icon: Download },
+    { path: "/rn/alerts", label: "Clinical Alerts", icon: Bell },
     { path: "/rn/audit", label: "Protocol Audit", icon: ClipboardCheck },
-    { path: "/rn/alerts", label: "Critical Alerts", icon: Bell },
     { path: "/rn/staff", label: "Staff Performance", icon: Activity },
   ];
 
@@ -30,10 +30,10 @@ export default function RNDashboard({ user, onLogout }: any) {
       <Routes>
         <Route index element={<RNOverview />} />
         <Route path="downloads" element={<AppDownloadCenter role="rn" />} />
-        <Route path="audit" element={<ClinicalAudit />} />
         <Route path="alerts" element={<AlertTracker />} />
+        <Route path="audit" element={<ClinicalAudit />} />
         <Route path="staff" element={<StaffPerformance />} />
-        <Route path="*" element={<div className="p-12 text-center text-gray-400 font-serif italic uppercase tracking-widest text-[10px]">Accessing clinical database...</div>} />
+        <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-[10px]">Clinical Navigation</div>} />
       </Routes>
     </DashboardLayout>
   );

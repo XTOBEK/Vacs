@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { CaregiverAssignment } from "../../components/CaregiverAssignment";
+import { ApplicantManager } from "./ApplicantManager";
 import { TemplateEditor } from "../../components/admin/TemplateEditor";
 import { seedDatabase } from "../../lib/seed";
 
@@ -70,10 +71,11 @@ export default function AdminDashboard({ user, onLogout }: any) {
         <Route path="cms" element={<CMSManager user={user} />} />
         <Route path="staff" element={<StaffManager user={user} />} />
         <Route path="clients" element={<ClientManager user={user} />} />
-        <Route path="lms" element={<AcademyManager user={user} />} />
-        <Route path="inventory" element={<InventoryManager user={user} />} />
-        <Route path="scheduling" element={<div className="p-12 text-center text-gray-400">Shift Logistics Control</div>} />
+        <Route path="applicants" element={<ApplicantManager user={user} />} />
         <Route path="finances" element={<FinancialManager />} />
+        <Route path="lms" element={<div className="p-12 text-center text-gray-400">Academy Under Construction</div>} />
+        <Route path="inventory" element={<div className="p-12 text-center text-gray-400">Asset Management Under Construction</div>} />
+        <Route path="scheduling" element={<div className="p-12 text-center text-gray-400">Shift Logistics Control</div>} />
         <Route path="*" element={<div className="p-12 text-center text-gray-400">Section Under Construction</div>} />
       </Routes>
     </DashboardLayout>

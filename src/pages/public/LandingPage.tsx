@@ -39,8 +39,8 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-5">
               <Button size="lg" className="h-14 px-8 md:px-10 rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/20" onClick={() => setIsDiscoveryOpen(true)}>Start Application</Button>
-              <Link to="/about">
-                <Button variant="ghost" size="lg" className="h-14 px-8 md:px-10 rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200">Our Protocol</Button>
+              <Link to="/careers">
+                <Button variant="ghost" size="lg" className="h-14 px-8 md:px-10 rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200">Careers</Button>
               </Link>
             </div>
             

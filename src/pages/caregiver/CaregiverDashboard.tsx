@@ -29,10 +29,10 @@ import {
   FileSearch,
   BookOpen
 } from "lucide-react";
-import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
 import Logo from "../../components/ui/Logo";
+import { DigitalRecordBook } from "../../components/dashboard/DigitalRecordBook";
 
 export default function CaregiverDashboard({ user: initialUser, onLogout }: any) {
   const [user, setUser] = useState(initialUser);
@@ -54,10 +54,7 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
 
   const navItems = [
     { icon: Home, path: "/dashboard", label: "Overview" },
-    { icon: Download, path: "/dashboard/downloads", label: "App Gateway" },
     { icon: Calendar, path: "/dashboard/schedule", label: "My Schedule" },
-    { icon: Award, path: "/dashboard/academy", label: "Academy" },
-    { icon: CreditCard, path: "/dashboard/payroll", label: "Earnings" },
   ];
 
   return (
@@ -121,10 +118,8 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
       <main className="flex-1 overflow-y-auto">
         <Routes>
           <Route index element={<CaregiverHome user={user} />} />
-          <Route path="downloads" element={<AppDownloadCenter role="caregiver" userData={user} />} />
           <Route path="kit-verification" element={<MedicalKitVerification user={user} />} />
           <Route path="care-log" element={<DailyCareLog />} />
-          <Route path="academy" element={<AcademyModules />} />
           <Route path="emergency" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-xs mt-20 opacity-40">Immediate Clinical Response Required. Contacting Supervisor...</div>} />
           <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-xs mt-20 opacity-40">Module Access Pending...</div>} />
         </Routes>
@@ -259,31 +254,6 @@ function CaregiverHome({ user }: any) {
              </div>
           </div>
        </div>
-
-       {guarantorStatus !== 'VERIFIED' && (
-         <div className="bg-amber-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-amber-600/20 relative overflow-hidden">
-            <div className="relative z-10">
-               <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                     <UserCheck size={24} />
-                  </div>
-                  <div>
-                     <h3 className="text-xl font-black italic uppercase tracking-tight">Route C: Guarantor Block</h3>
-                     <p className="text-amber-100 text-[10px] font-black uppercase tracking-widest">Mandatory Verification Pending</p>
-                  </div>
-               </div>
-               <p className="text-sm font-medium leading-relaxed mb-8 max-w-lg opacity-90">
-                  Your profile is restricted. VACS protocol requires two digital guarantors to accept legal responsibility before you can accept Tier 2-4 cases.
-               </p>
-               <div className="grid sm:grid-cols-2 gap-6 mb-8">
-                  <GuarantorSlot name="Dr. Samuel Oke" status="INVITED" />
-                  <GuarantorSlot name="Pastor James" status="PENDING_ACCEPTANCE" />
-               </div>
-               <Button className="h-14 px-10 rounded-full bg-white text-slate-900 border-none text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Resend Verification Links</Button>
-            </div>
-            <ShieldAlert size={180} className="absolute -bottom-10 -right-10 text-white/5 rotate-12" />
-         </div>
-       )}
 
        {/* Active Shift Card */}
        <div className="relative overflow-hidden bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 shadow-sm transition-all hover:shadow-xl hover:border-slate-300">

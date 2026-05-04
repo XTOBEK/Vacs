@@ -616,7 +616,7 @@ export default function ClientDashboard({ user: initialUser, onLogout }: any) {
   }, []);
 
   const menuItems = [
-    { path: "/client", label: "Care Protocol", icon: Heart },
+    { path: "/client", label: "Care Plans", icon: Heart },
     { path: "/client/downloads", label: "App Gateway", icon: Download },
     { path: "/client/logs", label: "Clinical Logs", icon: History },
     { path: "/client/billing", label: "Financial Ledger", icon: Wallet },
@@ -648,6 +648,7 @@ export default function ClientDashboard({ user: initialUser, onLogout }: any) {
           <Route path="downloads" element={<AppDownloadCenter role="client" />} />
           <Route path="logs" element={<ClientCareLogs />} />
           <Route path="billing" element={<ClientBilling wallet={wallet} />} />
+          <Route path="schedule" element={<div className="p-12 text-center text-slate-400">Service Calendar Under Construction</div>} />
           <Route path="support" element={<ClientSupport />} />
           <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-[0.3em] italic mt-20 opacity-40">Connecting to clinical node...</div>} />
         </Routes>

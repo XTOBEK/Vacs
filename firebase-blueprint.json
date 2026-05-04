@@ -175,5 +175,9 @@
       "schema": "EmailTemplate",
       "description": "System email templates"
     }
+    "/applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Applicant submissions"
+    }
   }
 }

@@ -60,7 +60,7 @@ const AiNavWidget = () => {
   const examples = ["Go to Dashboard", "What is the Emergency Protocol?", "Go Home"];
 
   return (
-    <div className="fixed bottom-6 left-6 z-[9999] flex flex-col items-start gap-4">
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-4">
       {isOpen && (
         <div className="w-80 h-96 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
           <div className="bg-[#0B1D45] text-white p-4 flex items-center justify-between">
