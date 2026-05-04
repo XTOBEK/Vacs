@@ -41,6 +41,9 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
         else if (profile.role === 'RN') navigate("/rn");
         else if (profile.role === 'CAREGIVER') navigate("/dashboard");
         else if (profile.role === 'CLIENT') navigate("/client");
+      } else if (user.email === 'princewill.iwuoha@gmail.com') {
+        // Owner is auto-admin
+        navigate("/vacs-control-gate");
       } else {
         if (isNewUser) {
            // For new users, we'll send them to completing their profile
@@ -101,7 +104,7 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
           <div className="flex justify-center mb-6">
              <Logo size="lg" />
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">
+          <h1 className="text-3xl font-black text-[#0B1D45] tracking-tighter uppercase italic">
             {adminOnly ? "Control Gate" : (isSignUp ? "Identity Creation" : "System Access")}
           </h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
@@ -109,12 +112,12 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
           </p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] border border-slate-100 p-10 md:p-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16"></div>
+        <div className="bg-[#0B1D45] rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] border border-white/10 p-10 md:p-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
           
           <div className="relative z-10 space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-[11px] font-black uppercase tracking-tight p-4 rounded-2xl flex items-center gap-3 animate-shake">
+              <div className="bg-red-50/10 border border-red-500/20 text-red-400 text-[11px] font-black uppercase tracking-tight p-4 rounded-2xl flex items-center gap-3 animate-shake">
                 <ShieldAlert size={16} className="shrink-0" />
                 <span>{error}</span>
               </div>
@@ -127,7 +130,7 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
                       placeholder="Full Legal Name"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                      className="w-full p-4 bg-white/10 rounded-2xl border border-white/20 focus:ring-2 focus:ring-[#C5A069] text-white text-sm font-bold placeholder:text-slate-500"
                       required
                   />
                 )}
@@ -136,7 +139,7 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
                     placeholder="Email (Hotmail, Yahoo, etc.)"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                    className="w-full p-4 bg-white/10 rounded-2xl border border-white/20 focus:ring-2 focus:ring-[#C5A069] text-white text-sm font-bold placeholder:text-slate-500"
                     required
                 />
                 <input 
@@ -144,10 +147,10 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
                     placeholder="Security Key (Password)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                    className="w-full p-4 bg-white/10 rounded-2xl border border-white/20 focus:ring-2 focus:ring-[#C5A069] text-white text-sm font-bold placeholder:text-slate-500"
                     required
                 />
-                <Button type="submit" className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full bg-blue-900 text-white hover:bg-blue-800" disabled={loading}>
+                <Button type="submit" className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-[#C5A069]/10 rounded-full bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158]" disabled={loading}>
                     {loading ? "Decrypting..." : (isSignUp ? "Generate Professional ID" : "Verify & Sign In")}
                 </Button>
             </form>

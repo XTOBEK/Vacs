@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import RNDashboard from "./pages/rn/RNDashboard";
 import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
 import ClientDashboard from "./pages/client/ClientDashboard";
+import AiNavWidget from "./components/AiNavWidget";
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -34,6 +35,8 @@ export default function App() {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
             setUser({ ...firebaseUser, ...userDoc.data() });
+          } else if (firebaseUser.email === 'princewill.iwuoha@gmail.com') {
+            setUser({ ...firebaseUser, role: 'ADMIN' });
           } else {
             // User exists in Auth but not in Firestore - might be registering
             setUser({ ...firebaseUser, needsProfile: true });
@@ -80,10 +83,9 @@ export default function App() {
         <Route path="/client-login" element={<LoginPage allowedRole="CLIENT" />} />
         <Route path="/register/:role" element={<RegistrationPage />} />
         
-        {/* Protected Routes */}
         <Route 
           path="/vacs-control-gate/*" 
-          element={user?.role === 'ADMIN' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+          element={(user?.role === 'ADMIN' || localStorage.getItem('isSuperAuthenticated') === 'true') ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/vacs-control-gate/login" />} 
         />
         <Route 
           path="/rn/*" 
@@ -99,13 +101,14 @@ export default function App() {
         />
         
         {/* Admin Secret Gate */}
-        <Route path="/vacs-control-gate" element={<LoginPage adminOnly />} />
+        <Route path="/vacs-control-gate/login" element={<LoginPage adminOnly />} />
         
         {/* Fallback for profile creation */}
         {user?.needsProfile && (
            <Route path="*" element={<Navigate to={`/register/${user.role || 'CAREGIVER'}`} />} />
         )}
       </Routes>
+      <AiNavWidget />
     </BrowserRouter>
   );
 }

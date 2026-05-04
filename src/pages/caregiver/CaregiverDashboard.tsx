@@ -32,6 +32,7 @@ import {
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
+import Logo from "../../components/ui/Logo";
 
 export default function CaregiverDashboard({ user: initialUser, onLogout }: any) {
   const [user, setUser] = useState(initialUser);
@@ -62,25 +63,21 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row pb-20 md:pb-0 font-sans">
       {/* Mobile Header */}
-      <header className="md:hidden bg-slate-900 text-white p-6 sticky top-0 z-40 flex items-center justify-between shadow-xl">
+      <header className="md:hidden bg-[#0B1D45] text-white p-6 sticky top-0 z-40 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
-           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-lg">
-              <Heart size={18} fill="currentColor" />
-           </div>
-           <span className="font-black tracking-tighter text-lg uppercase">VACS Field</span>
+           <Logo size="sm" inverted />
+           <span className="font-black tracking-tighter text-lg uppercase text-white">VACS Field</span>
         </div>
-        <button onClick={onLogout} className="p-2 bg-slate-800 rounded-xl border border-slate-700">
-           <Zap size={18} className="text-blue-400" />
+        <button onClick={onLogout} className="p-2 bg-white/10 rounded-xl border border-white/20">
+           <Zap size={18} className="text-[#C5A069]" />
         </button>
       </header>
 
       {/* PC Sidebar */}
-      <aside className="hidden md:flex w-64 bg-slate-900 flex-col shrink-0">
-         <div className="p-8 border-b border-slate-800">
+      <aside className="hidden md:flex w-64 bg-[#0B1D45] flex-col shrink-0">
+         <div className="p-8 border-b border-white/10">
             <div className="flex items-center gap-3">
-               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white">
-                  <Heart size={18} fill="currentColor" />
-               </div>
+               <Logo size="sm" inverted />
                <h1 className="text-xl font-black text-white tracking-tighter">VACS</h1>
             </div>
             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-3 leading-none">Field Professional Portal</p>
@@ -94,7 +91,7 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all uppercase tracking-widest text-[10px]",
                   location.pathname === item.path 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" 
+                    ? "bg-[#C5A069] text-[#0B1D45] shadow-lg shadow-[#C5A069]/20" 
                     : "text-slate-400 hover:text-white"
                 )}
               >
@@ -104,16 +101,16 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
             ))}
          </nav>
 
-         <div className="p-6 border-t border-slate-800 bg-slate-800/10">
-            <div className="bg-slate-800 rounded-2xl p-4 border border-slate-700">
+         <div className="p-6 border-t border-white/10 bg-white/5">
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold font-serif italic text-[10px]">{user.fullName?.[0] || user.full_name?.[0]}</div>
+                  <div className="w-8 h-8 rounded-full bg-[#C5A069] flex items-center justify-center text-[#0B1D45] font-bold font-serif italic text-[10px]">{user.fullName?.[0] || user.full_name?.[0]}</div>
                   <div className="min-w-0">
                      <p className="text-xs font-bold text-white truncate">{user.fullName || user.full_name}</p>
-                     <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Tier 2 Professional</p>
+                     <p className="text-[9px] text-[#C5A069] font-black uppercase tracking-widest mt-0.5 italic">Tier 2 Professional</p>
                   </div>
                </div>
-               <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700 p-0 px-2 h-8 text-[10px] font-black uppercase tracking-widest gap-2" onClick={onLogout}>
+               <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/10 p-0 px-2 h-8 text-[10px] font-black uppercase tracking-widest gap-2" onClick={onLogout}>
                   <Zap size={12} /> Log Off System
                </Button>
             </div>
@@ -163,8 +160,48 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
 }
 
 function CaregiverHome({ user }: any) {
+  const navigate = useNavigate();
+
+  const handleClockIn = () => {
+    if (!navigator.geolocation) {
+       alert("Geolocation is not supported by your browser.");
+       return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        // In a real app, we compare these coordinates with the client's registered address
+        // We'll simulate the validation and update Firestore
+        try {
+           const userId = auth.currentUser?.uid;
+           if (!userId) return;
+
+           await updateDoc(doc(db, "users", userId), {
+              "lastLocation": {
+                 lat: latitude,
+                 lng: longitude,
+                 timestamp: new Date().toISOString()
+              },
+              "shiftStatus": "ONGOING",
+              "lastClockIn": new Date().toISOString()
+           });
+           
+           navigate("/dashboard/care-log");
+        } catch (error) {
+           handleFirestoreError(error, OperationType.UPDATE, "users/location");
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        alert("Unable to retrieve your location for secure clock-in protocol.");
+      }
+    );
+  };
+
   const kitStatus = user.kitStatus || 'MISSING';
   const guarantorStatus = user.guarantorStatus || 'PENDING';
+  const shiftStatus = user.shiftStatus || 'IDLE';
 
   const fullName = user.fullName || user.full_name || "Agent";
 
@@ -192,6 +229,18 @@ function CaregiverHome({ user }: any) {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4">
+             {/* Shift Status Node */}
+             <div className="px-6 py-4 rounded-3xl bg-slate-900 border border-slate-800 text-white flex items-center gap-4 shadow-xl">
+                <div className={cn(
+                  "w-3 h-3 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]",
+                  shiftStatus === 'ONGOING' ? "bg-emerald-500 animate-pulse" : "bg-slate-600"
+                )}></div>
+                <div>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Deployment Node</p>
+                   <p className="text-xs font-black uppercase tracking-tighter italic">{shiftStatus === 'ONGOING' ? "Operation Live" : "Awaiting Dispatch"}</p>
+                </div>
+             </div>
+
              {/* Kit Status Chip */}
              <div className={cn(
                 "px-6 py-4 rounded-3xl border flex items-center gap-4 shadow-sm",
@@ -241,8 +290,12 @@ function CaregiverHome({ user }: any) {
           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-50 rounded-full -mr-12 -mt-12 opacity-80 blur-3xl -z-0"></div>
           <div className="relative z-10">
              <div className="flex items-center justify-between mb-8">
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-100 flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div> Active Clinical Engagement
+                <span className={cn(
+                  "px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border flex items-center gap-2",
+                  shiftStatus === 'ONGOING' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-slate-50 text-slate-400 border-slate-100"
+                )}>
+                   <div className={cn("w-2 h-2 rounded-full", shiftStatus === 'ONGOING' ? "bg-blue-600 animate-pulse" : "bg-slate-300")}></div> 
+                   {shiftStatus === 'ONGOING' ? "Active Clinical Engagement" : "Protocol Standby"}
                 </span>
                 <div className="hidden lg:flex items-center gap-2">
                    <div className="flex items-center gap-1">
@@ -260,22 +313,39 @@ function CaregiverHome({ user }: any) {
              </div>
              <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div className="space-y-2">
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Assigned Case Node</p>
                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter">Margaret Stewart</h3>
                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
                       <Clock size={14} className="text-slate-300" /> 08:00 – 16:00 Corridor • Morning Complex Care
                    </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                   <Link to="/dashboard/care-log">
-                      <Button className="h-14 px-8 rounded-full text-xs font-black uppercase tracking-widest gap-3 shadow-xl shadow-blue-600/10">
-                         <Clock size={18} /> Protocol Check-In
+                   {shiftStatus === 'ONGOING' ? (
+                     <>
+                        <Link to="/dashboard/care-log">
+                           <Button className="h-14 px-8 rounded-full text-xs font-black uppercase tracking-widest gap-3 shadow-xl shadow-blue-600/10">
+                              <ClipboardCheck size={18} /> Digital Vital Log
+                           </Button>
+                        </Link>
+                        <Button 
+                          variant="outline" 
+                          onClick={async () => {
+                             const userId = auth.currentUser?.uid;
+                             if (userId) await updateDoc(doc(db, "users", userId), { shiftStatus: 'IDLE' });
+                          }}
+                          className="h-14 px-8 rounded-full text-xs font-black uppercase tracking-widest gap-3 border-rose-200 text-rose-600 hover:bg-rose-50"
+                        >
+                           Clock Out Protocol
+                        </Button>
+                     </>
+                   ) : (
+                      <Button 
+                        onClick={handleClockIn}
+                        className="h-14 px-10 rounded-full text-xs font-black uppercase tracking-widest gap-3 shadow-2xl shadow-[#C5A069]/20 bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158] border-none"
+                      >
+                         <MapPin size={18} /> Initiate Geolocation Clock-In
                       </Button>
-                   </Link>
-                   <Link to="/dashboard/care-log">
-                      <Button variant="outline" className="h-14 px-8 rounded-full text-xs font-black uppercase tracking-widest gap-3 border-slate-200 hover:border-slate-300 hover:bg-slate-50">
-                         <ClipboardCheck size={18} className="text-blue-600" /> Digital Vital Log
-                      </Button>
-                   </Link>
+                   )}
                 </div>
              </div>
           </div>
@@ -804,18 +874,16 @@ function AcademyModules() {
                      modules={[
                         { title: "Safe Mobilization (ADL)", progress: 100, status: "VERIFIED" },
                         { title: "Standard Hygiene Protocols", progress: 100, status: "VERIFIED" },
-                        { title: "Nutrition & Hydration Audits", progress: 65, status: "IN_PROGRESS" }
+                        { title: "Nutrition & Hydration Audits", progress: 100, status: "VERIFIED" }
                      ]}
                   />
                   
                   <AcademyTrack 
                      title="Track 2: Clinical Practice" 
                      desc="Advanced physiological monitoring and RN-led protocol adherence."
-                     locked
-                     reason="Requires Manual RN Check-In Pass"
                      modules={[
-                        { title: "Vital Signs Reporting (DCL)", progress: 0, status: "LOCKED" },
-                        { title: "Emergency Escalation Pathways", progress: 0, status: "LOCKED" },
+                        { title: "Vital Signs Reporting (DCL)", progress: 100, status: "VERIFIED" },
+                        { title: "Emergency Escalation Pathways", progress: 45, status: "IN_PROGRESS" },
                         { title: "Medication Verification (MVS)", progress: 0, status: "LOCKED" }
                      ]}
                   />

@@ -47,11 +47,11 @@ function RNOverview() {
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
             <div>
               <div className="flex items-center gap-2 mb-6">
-                 <span className="px-3 py-1 bg-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/20">Protocol Node Alpha</span>
+                 <span className="px-3 py-1 bg-[#C5A069] text-[#0B1D45] text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/20">Protocol Node Alpha</span>
                  <div className="h-1 w-1 bg-slate-700 rounded-full"></div>
                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Network Live</span>
               </div>
-              <h3 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-blue-500/30 decoration-8 underline-offset-12">Clinical Command Hub</h3>
+              <h3 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-[#C5A069]/30 decoration-8 underline-offset-12">Clinical Command Hub</h3>
               <p className="text-slate-400 text-base max-w-md font-medium leading-relaxed">System-wide monitoring for Registered Nurses. Oversight of critical physiological telemetry and staff compliance.</p>
             </div>
             

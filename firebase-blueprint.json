@@ -8,72 +8,156 @@
         "uid": { "type": "string" },
         "fullName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["admin", "caregiver", "client", "rn"] },
-        "kitStatus": { "type": "string", "enum": ["MISSING", "PENDING", "VERIFIED"] },
-        "guarantorStatus": { "type": "string", "enum": ["PENDING", "VERIFIED"] },
+        "role": { "type": "string", "enum": ["ADMIN", "RN", "CAREGIVER", "CLIENT"] },
+        "status": { "type": "string", "enum": ["PENDING", "ACTIVE", "SUSPENDED"] },
+        "kitVerified": { "type": "boolean" },
+        "guarantorVerified": { "type": "boolean" },
         "region": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "assignedCaregiverId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLocation": { 
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "timestamp": { "type": "string" }
+          }
+        }
       },
       "required": ["uid", "fullName", "email", "role"]
     },
-    "ClientRecord": {
-      "title": "Clinical Client Profile",
-      "description": "Details about care recipients and their clinical status.",
+    "Wallet": {
+      "title": "Digital Wallet",
+      "description": "Balance and financial state for users.",
       "type": "object",
       "properties": {
+        "balance": { "type": "number" },
+        "currency": { "type": "string" },
+        "lastTopUp": { "type": "string" },
+        "bankAccount": {
+           "type": "object",
+           "properties": {
+              "bankName": { "type": "string" },
+              "accountNumber": { "type": "string" },
+              "accountName": { "type": "string" }
+           }
+        }
+      }
+    },
+    "Shift": {
+      "title": "Clinical Shift",
+      "description": "A scheduled or active care session.",
+      "type": "object",
+      "properties": {
+        "caregiverId": { "type": "string" },
         "clientId": { "type": "string" },
-        "name": { "type": "string" },
-        "tier": { "type": "string" },
-        "status": { "type": "string", "enum": ["ACTIVE", "HOSPITALIZED", "SUSPENDED"] },
-        "healthScore": { "type": "number" },
-        "pulseClauseActive": { "type": "boolean" },
-        "balance": { "type": "number" }
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["SCHEDULED", "ONGOING", "COMPLETED", "HOSPITALIZED"] },
+        "transportFee": { "type": "number" },
+        "checkInLocation": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        }
       },
-      "required": ["clientId", "name", "tier", "status"]
+      "required": ["caregiverId", "clientId", "status"]
     },
-    "AcademyTrack": {
-      "title": "Academy Logic",
-      "description": "Certification and loyalty threshold tracking.",
+    "DailyCareLog": {
+      "title": "Daily Care Log",
+      "description": "Vitals and daily metrics recorded during a shift.",
       "type": "object",
       "properties": {
-        "staffId": { "type": "string" },
-        "trackName": { "type": "string" },
-        "progress": { "type": "number" },
-        "isLocked": { "type": "boolean" },
-        "tenureDays": { "type": "number" }
-      },
-      "required": ["staffId", "trackName"]
+        "shiftId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "vitals": {
+          "type": "object",
+          "properties": {
+            "temp": { "type": "number" },
+            "heartRate": { "type": "number" },
+            "systolic": { "type": "number" },
+            "diastolic": { "type": "number" },
+            "oxygen": { "type": "number" }
+          }
+        },
+        "notes": { "type": "string" }
+      }
     },
-    "InventoryItem": {
-      "title": "Asset Registry",
-      "description": "Medical kits and clinical tools assigned to staff.",
+    "AppSetting": {
+      "title": "Global System Settings",
+      "description": "CMS and architecture constants.",
       "type": "object",
       "properties": {
-        "itemId": { "type": "string" },
+        "tierRates": { "type": "object" },
+        "transportZoneFees": { "type": "object" },
+        "landingPageCopy": { "type": "object" }
+      }
+    },
+    "ExamDefinition": {
+      "title": "Exam Blueprint",
+      "description": "Master definitions for training assessments.",
+      "type": "object",
+      "properties": {
         "title": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "status": { "type": "string" },
-        "verificationUrl": { "type": "string" }
-      },
-      "required": ["itemId", "title", "ownerId"]
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "q": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "correctAnswer": { "type": "string" }
+            }
+          }
+        },
+        "passingScore": { "type": "number" },
+        "isPublished": { "type": "boolean" }
+      }
+    },
+    "Assessment": {
+      "title": "Exam Submission",
+      "description": "Student submission waiting to be graded.",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "answers": { "type": "array", "items": { "type": "string" } },
+        "score": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "PASSED", "FAILED"] },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
-      "description": "Core system users"
+      "description": "Primary identity registry"
     },
-    "/clients/{clientId}": {
-      "schema": "ClientRecord",
-      "description": "Registry of patients/clients"
+    "/users/{userId}/wallet/main": {
+      "schema": "Wallet",
+      "description": "Financial state for payments"
     },
-    "/academy/{trackId}": {
-      "schema": "AcademyTrack",
-      "description": "Certification tracking"
+    "/shifts/{shiftId}": {
+      "schema": "Shift",
+      "description": "Shift and log registry"
     },
-    "/inventory/{itemId}": {
-      "schema": "InventoryItem",
-      "description": "Kit audits"
+    "/shifts/{shiftId}/logs/{logId}": {
+      "schema": "DailyCareLog",
+      "description": "Clinical vitals feed"
+    },
+    "/settings/global": {
+      "schema": "AppSetting",
+      "description": "Dynamic CMS node"
+    },
+    "/exams/{examId}": {
+      "schema": "ExamDefinition",
+      "description": "Master assessments"
+    },
+    "/exams/{examId}/assessments/{assessmentId}": {
+      "schema": "Assessment",
+      "description": "Graded submissions"
     }
   }
 }

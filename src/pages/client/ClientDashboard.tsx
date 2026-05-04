@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { 
   Heart, 
@@ -19,13 +20,22 @@ import {
   ShieldAlert,
   ChevronRight,
   User,
-  BadgeCheck
+  BadgeCheck,
+  Bell,
+  X,
+  Plus,
+  ArrowDownLeft,
+  CreditCard,
+  PhoneCall,
+  LogOut
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
 import { db, auth, handleFirestoreError, OperationType } from "../../lib/firebase";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
+
+// --- Sub-components ---
 
 function ClientSupport() {
   const [messages, setMessages] = useState([
@@ -38,7 +48,6 @@ function ClientSupport() {
     const userMsg = { role: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
     
-    // Logic for Poaching Query
     let responseText = "Acknowledged. Routing query to Supervising RN.";
     if (input.toLowerCase().includes('pay') && input.toLowerCase().includes('caregiver')) {
       responseText = "All payments must go through the VACS platform to ensure your insurance coverage and clinical RN oversight remain valid. Private hiring is a breach of the Service Agreement.";
@@ -103,312 +112,32 @@ function ClientSupport() {
   );
 }
 
-export default function ClientDashboard({ user: initialUser, onLogout }: any) {
-  const [user, setUser] = useState(initialUser);
-
-  useEffect(() => {
-    if (!auth.currentUser) return;
-    const unsubscribe = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
-      if (snapshot.exists()) {
-        setUser({ ...auth.currentUser, ...snapshot.data() });
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const menuItems = [
-    { path: "/client", label: "Care Protocol", icon: Heart },
-    { path: "/client/downloads", label: "App Gateway", icon: Download },
-    { path: "/client/logs", label: "Clinical Logs", icon: History },
-    { path: "/client/billing", label: "Financial Ledger", icon: Wallet },
-    { path: "/client/schedule", label: "Service Calendar", icon: Calendar },
-    { path: "/client/support", label: "Protocol Support", icon: MessageSquare },
-  ];
-
-  return (
-    <DashboardLayout user={user} onLogout={onLogout} menuItems={menuItems}>
-      <Routes>
-        <Route index element={<ClientOverview client={user} />} />
-        <Route path="downloads" element={<AppDownloadCenter role="client" />} />
-        <Route path="logs" element={<ClientCareLogs />} />
-        <Route path="billing" element={<ClientBilling />} />
-        <Route path="support" element={<ClientSupport />} />
-        <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-[0.3em] italic mt-20 opacity-40">Connecting to clinical node...</div>} />
-      </Routes>
-    </DashboardLayout>
-  );
-}
-
-function ClientOverview({ client }: any) {
-  const [isHospitalized, setIsHospitalized] = useState(false);
-  const [caregiver, setCaregiver] = useState<any>(null);
-  const [supervisor, setSupervisor] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchCareTeam() {
-      if (!client?.assignedStaffId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const cgDoc = await getDoc(doc(db, "users", client.assignedStaffId));
-        if (cgDoc.exists()) {
-          const cgData = cgDoc.data();
-          setCaregiver(cgData);
-
-          if (cgData.supervisorId) {
-            const svDoc = await getDoc(doc(db, "users", cgData.supervisorId));
-            if (svDoc.exists()) {
-              setSupervisor(svDoc.data());
-            }
-          }
-        }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.GET, "users/care-team");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchCareTeam();
-  }, [client?.assignedStaffId]);
-
-  const displayName = client.fullName || client.full_name || "Client";
-
-  return (
-    <div className="space-y-10">
-       {/* Poaching Warning Banner */}
-       <div className="bg-red-50 border border-red-100 p-4 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0">
-                <ShieldAlert size={18} />
-             </div>
-             <p className="text-[10px] font-black text-red-900 uppercase tracking-widest leading-relaxed">
-                <span className="text-red-600">Protocol Alert:</span> Private hiring of VACS staff is a breach of the Service Agreement (Penalty: ₦500,000).
-             </p>
-          </div>
-          <button className="text-[9px] font-black uppercase tracking-widest text-red-600 underline">Read Agreement</button>
-       </div>
-
-       <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center gap-10 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          <div className="w-28 h-28 rounded-3xl overflow-hidden bg-slate-100 shrink-0 border-4 border-white shadow-xl relative z-10">
-             <img src={client.profileImage || "https://images.unsplash.com/photo-1544120190-27583f2274a2?q=80&w=400"} alt="Patient" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1 relative z-10">
-             <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{displayName}</h3>
-                <span className={cn(
-                  "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
-                  isHospitalized ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                )}>
-                  {isHospitalized ? "HOSPITALIZED (RETENTION MODE)" : "Active Care"}
-                </span>
-             </div>
-             <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500" /> Tier 2 Case Protocol</span>
-                <span className="flex items-center gap-2"><Calendar size={14} className="text-slate-300" /> ID: {client.id?.slice(0, 8)}</span>
-             </div>
-          </div>
-          <div className="flex flex-col gap-4">
-             <div className="bg-slate-900 text-white p-8 rounded-[2rem] text-center min-w-[240px] shadow-2xl relative z-10 border border-slate-800">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 uppercase">Account Ledger</p>
-                <h4 className="text-4xl font-black tracking-tighter mb-4">₦120,000</h4>
-                <Link to="/client/billing" className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Deposit Clinical Credits</Link>
-             </div>
-             <Button 
-               onClick={() => setIsHospitalized(!isHospitalized)}
-               variant={isHospitalized ? "primary" : "outline"}
-               className={cn(
-                 "h-12 rounded-2xl text-[9px] font-black uppercase tracking-widest border-2",
-                 isHospitalized ? "bg-emerald-600 border-none" : "border-amber-200 text-amber-600 hover:bg-amber-50"
-               )}
-             >
-               {isHospitalized ? "Resume Standard Protocol" : "Trigger Pulse Clause (Hospitalized)"}
-             </Button>
-          </div>
-       </div>
-
-       {/* Diagnostic Vitals Protocol */}
-       <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-             <div>
-                <h3 className="font-black text-slate-900 text-2xl tracking-tighter italic uppercase underline decoration-blue-500/30 decoration-4 underline-offset-8">Clinical Vitals Node</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Real-time physiological telemetry from caregiver registry</p>
-             </div>
-             <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                <Clock size={16} className="text-blue-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Last Synced:</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">May 3, 2026 • 14:45</span>
-             </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-             <VitalMetric icon={<Thermometer className="text-orange-500" size={18} />} label="Body Temp" value="98.6" unit="°F" />
-             <VitalMetric icon={<Heart className="text-rose-500" size={18} />} label="Heart Rate" value="72" unit="BPM" />
-             <VitalMetric icon={<Zap className="text-blue-500" size={18} />} label="Glucose" value="110" unit="mg/dL" />
-             <VitalMetric icon={<Activity className="text-emerald-500" size={18} />} label="Systolic" value="120" unit="mmHg" />
-             <VitalMetric icon={<Activity className="text-emerald-500" size={18} />} label="Diastolic" value="80" unit="mmHg" />
-             <VitalMetric icon={<Activity className="text-sky-500" size={18} />} label="Oxygen" value="98" unit="%" />
-          </div>
-       </div>
-
-       {/* Caregiver Identity Protocol */}
-       {caregiver ? (
-          <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 group-hover:scale-110 transition-transform duration-1000"></div>
-             <div className="flex flex-col gap-10 relative z-10">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-                   <div className="flex flex-col md:flex-row items-center gap-8">
-                      <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-slate-100 border-4 border-white shadow-2xl shrink-0 group-hover:rotate-3 transition-transform">
-                         <img 
-                           src={caregiver.profileImage || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400"} 
-                           alt="Caregiver" 
-                           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-                         />
-                      </div>
-                      <div className="text-center md:text-left">
-                         <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">{caregiver.fullName || caregiver.full_name}</h3>
-                            <span className={cn(
-                              "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm",
-                              caregiver.verificationStatus === 'VERIFIED' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-red-50 text-red-600 border-red-100"
-                            )}>
-                              {caregiver.verificationStatus === 'VERIFIED' ? "Cleared for Registry" : "Verification Pending"}
-                            </span>
-                         </div>
-                         <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] leading-none mb-1">Assigned Field Professional</p>
-                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-60">
-                            {caregiver.role === 'CAREGIVER' ? 'HEALTH CARE ASSISTANT' : caregiver.role} • ID: #{caregiver.id?.slice(0, 8)}
-                         </p>
-                      </div>
-                   </div>
-                   
-                   <div className="grid sm:grid-cols-2 gap-4">
-                      <CaregiverContactItem 
-                        icon={<Phone size={16} className="text-blue-500" />} 
-                        label="Secure Line" 
-                        value={caregiver.phoneNumber || caregiver.phone || "Encrypted"} 
-                      />
-                      <CaregiverContactItem 
-                        icon={<Mail size={16} className="text-blue-500" />} 
-                        label="Protocol Email" 
-                        value={caregiver.email || "Encrypted"} 
-                      />
-                   </div>
-                </div>
-
-                {/* Bio Section */}
-                <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-                   <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4 flex items-center gap-2">
-                      <User size={14} className="text-blue-500" /> Professional Bio & Clinical Summary
-                   </h4>
-                   <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
-                      {caregiver.bio || "This field professional is a certified member of the VACS registry, trained in advanced ADL support and clinical observation protocols."}
-                   </p>
-                </div>
-
-                {/* Supervising RN */}
-                {supervisor && (
-                   <div className="p-8 border-t-4 border-slate-900 bg-slate-900 text-white rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-8">
-                      <div className="flex items-center gap-6">
-                         <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-xl shadow-blue-500/20">
-                            <BadgeCheck size={32} />
-                         </div>
-                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Supervising Nurse (RN)</p>
-                            <h5 className="text-xl font-black tracking-tight">{supervisor.fullName || supervisor.full_name}</h5>
-                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">RN License Verified • Case Lead</p>
-                         </div>
-                      </div>
-                      <Button variant="ghost" className="h-12 px-8 rounded-full border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-white">Contact Super</Button>
-                   </div>
-                )}
-             </div>
-          </div>
-       ) : (
-          <div className="p-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <User size={32} className="text-slate-200" />
-              </div>
-              <h3 className="text-xl font-black text-slate-300 uppercase tracking-widest">Awaiting Staff Assignment</h3>
-           </div>
-        )}
-
-       <div className="grid lg:grid-cols-2 gap-10">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden">
-             <div className="flex items-center justify-between mb-8">
-                <h3 className="font-black text-slate-900 text-xl tracking-tight uppercase italic underline decoration-blue-500/30 decoration-4 underline-offset-8">Live Care Stream</h3>
-                <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-500">
-                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> Synchronized
-                </span>
-             </div>
-             <div className="space-y-10">
-                <div className="relative pl-8 border-l-2 border-slate-100 space-y-3">
-                   <div className="absolute -left-[9px] top-0 w-4 h-4 bg-blue-600 rounded-full border-4 border-white shadow-xl shadow-blue-500/20"></div>
-                   <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Today, 14:45 • Vitals Record</p>
-                   <p className="text-lg font-black text-slate-900 tracking-tight">Afternoon Vitals Stable & Verified</p>
-                   <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                      Margaret was alert and took her medications on time. We enjoyed a short walk in the garden today. 
-                      She finished her entire lunch (Chicken Soup).
-                   </p>
-                </div>
-                <div className="relative pl-8 border-l-2 border-slate-100 space-y-3 opacity-40 grayscale">
-                   <div className="absolute -left-[9px] top-0 w-4 h-4 bg-slate-300 rounded-full border-4 border-white shadow-sm"></div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Today, 09:00 • Deployment</p>
-                   <p className="text-lg font-black text-slate-900 tracking-tight">Morning Shift Engagement Started</p>
-                </div>
-             </div>
-          </div>
-
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-8">
-             <div className="flex items-center justify-between">
-                <h3 className="font-black text-slate-900 text-xl tracking-tight uppercase italic underline decoration-amber-500/30 decoration-4 underline-offset-8">Service Calendar</h3>
-                <Link to="/client/schedule" className="text-[10px] font-black uppercase tracking-widest text-blue-600">Full Schedule</Link>
-             </div>
-             <div className="space-y-4">
-                {[
-                  { day: "Tue 14", time: "08:00 - 16:00", staff: "Emma Wilson", role: "SCA" },
-                  { day: "Wed 15", time: "08:00 - 16:00", staff: "Emma Wilson", role: "SCA" },
-                  { day: "Thu 16", time: "08:00 - 16:00", staff: "John Doe", role: "HCA" },
-                ].map((shift, i) => (
-                   <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-xl hover:border-slate-200 group">
-                      <div className="flex items-center gap-5">
-                         <div className="w-12 h-14 bg-white border border-slate-100 rounded-xl flex flex-col items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{shift.day.split(' ')[0]}</span>
-                            <span className="text-xl font-black text-slate-900 leading-none tracking-tighter">{shift.day.split(' ')[1]}</span>
-                         </div>
-                         <div>
-                            <p className="text-sm font-black text-slate-900 tracking-tight">{shift.time}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Field Staff: {shift.staff}</p>
-                               <span className="px-1.5 py-0.5 bg-slate-200 text-[8px] font-black uppercase rounded text-slate-600">{shift.role}</span>
-                            </div>
-                         </div>
-                      </div>
-                      <ChevronRight size={18} className="text-slate-200 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
-                   </div>
-                ))}
-             </div>
-          </div>
-       </div>
-    </div>
-  );
-}
-
 function VitalMetric({ icon, label, value, unit }: any) {
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-100 rounded-[2rem] transition-all hover:bg-white hover:border-blue-500 hover:shadow-xl group">
+    <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-100 rounded-[2rem] transition-all hover:bg-white hover:border-[#C5A069] hover:shadow-xl group text-center">
        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
           {icon}
        </div>
        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{label}</div>
        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-black text-slate-900 tracking-tighter">{value}</span>
+          <span className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{value}</span>
           <span className="text-[8px] font-black text-slate-400 uppercase">{unit}</span>
        </div>
+    </div>
+  );
+}
+
+function ReminderItem({ time, text, status }: { time: string, text: string, status: 'PENDING' | 'UPCOMING' | 'COMPLETED' }) {
+  return (
+    <div className="flex items-center gap-4 group">
+       <div className="text-[10px] font-black text-[#C5A069] tabular-nums">{time}</div>
+       <div className="flex-1">
+          <p className="text-[11px] font-black uppercase tracking-wide group-hover:text-[#C5A069] transition-colors">{text}</p>
+       </div>
+       <div className={cn(
+          "w-1.5 h-1.5 rounded-full shadow-[0_0_5px_rgba(0,0,0,0.5)]",
+          status === 'PENDING' ? "bg-rose-500 animate-pulse shadow-rose-500/50" : status === 'UPCOMING' ? "bg-amber-500" : "bg-emerald-500 shadow-emerald-500/50"
+       )}></div>
     </div>
   );
 }
@@ -457,67 +186,182 @@ function ClientCareLogs() {
    );
 }
 
-function ClientBilling() {
+function ClientBilling({ wallet }: { wallet: any }) {
+   const [showTopUp, setShowTopUp] = useState(false);
+   const [amount, setAmount] = useState("");
+   const [loading, setLoading] = useState(false);
+
+   const balance = wallet?.balance || 0;
+
+   const handleTopUp = async () => {
+      if (!amount || isNaN(Number(amount))) return;
+      setLoading(true);
+      try {
+         const userId = auth.currentUser?.uid;
+         if (!userId) return;
+
+         // Simulate payment success and update wallet
+         await updateDoc(doc(db, "users", userId, "wallet", "main"), {
+            balance: balance + Number(amount),
+            lastTopUp: new Date().toISOString(),
+            currency: 'NGN'
+         });
+
+         setShowTopUp(false);
+         setAmount("");
+      } catch (error) {
+         handleFirestoreError(error, OperationType.UPDATE, "wallet/main");
+      } finally {
+         setLoading(false);
+      }
+   };
+
    return (
-      <div className="space-y-10">
+      <div className="space-y-10 relative">
+         <AnimatePresence>
+            {showTopUp && (
+               <>
+                  <motion.div 
+                     initial={{ opacity: 0 }}
+                     animate={{ opacity: 1 }}
+                     exit={{ opacity: 0 }}
+                     onClick={() => setShowTopUp(false)}
+                     className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110]"
+                  />
+                  <motion.div 
+                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                     animate={{ scale: 1, opacity: 1, y: 0 }}
+                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                     className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-[3rem] p-10 z-[111] shadow-2xl border border-slate-100"
+                  >
+                     <div className="flex items-center justify-between mb-8">
+                        <div>
+                           <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Deposit Node</h3>
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Registry Credit Acquisition</p>
+                        </div>
+                        <button onClick={() => setShowTopUp(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900">
+                           <X size={18} />
+                        </button>
+                     </div>
+
+                     <div className="space-y-8">
+                        <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 focus-within:border-blue-500 focus-within:bg-white transition-all group">
+                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 text-center group-focus-within:text-blue-500">Amount (NGN)</p>
+                           <input 
+                              type="number" 
+                              value={amount}
+                              onChange={(e) => setAmount(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full bg-transparent font-black text-4xl text-center outline-none text-slate-900 placeholder:text-slate-200"
+                           />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                           {['50000', '100000', '250000', '500000'].map(val => (
+                              <button 
+                                 key={val}
+                                 onClick={() => setAmount(val)}
+                                 className="py-4 rounded-2xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-900 hover:bg-slate-50 hover:border-[#C5A069] transition-all"
+                              >
+                                 ₦{Number(val).toLocaleString()}
+                              </button>
+                           ))}
+                        </div>
+
+                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-dashed border-blue-200 flex items-center gap-4">
+                           <ShieldCheck size={20} className="text-blue-600 shrink-0" />
+                           <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-loose">
+                              Secure Node Protocol: Encrypted through Flutterwave/Paystack Gateway.
+                           </p>
+                        </div>
+
+                        <Button 
+                           disabled={loading || !amount}
+                           onClick={handleTopUp}
+                           className="w-full h-16 rounded-[1.5rem] bg-slate-900 border-none text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/10"
+                        >
+                           {loading ? "Initializing Transaction..." : "Proceed to Secure Engine"}
+                        </Button>
+                     </div>
+                  </motion.div>
+               </>
+            )}
+         </AnimatePresence>
+
          <div className="grid md:grid-cols-2 gap-10">
-            <div className="bg-slate-950 text-white p-10 rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden border border-slate-800">
+            <div className="bg-slate-950 text-white p-10 rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden border border-slate-800 transition-transform hover:scale-[1.01] duration-500">
                <div className="relative z-10">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Total Expenditure (MTD)</p>
-                  <h4 className="text-6xl font-black tracking-tighter mb-10">₦1,120,400</h4>
-             <div className="flex flex-wrap gap-4">
-                <Link to="/client/billing">
-                  <Button className="h-12 px-8 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-900 hover:bg-blue-50 shadow-xl shadow-white/5">Deposit Funds</Button>
-                </Link>
-                <Link to="/client/support">
-                  <Button variant="ghost" className="h-12 px-8 rounded-full text-[10px] font-black uppercase tracking-widest text-white border border-white/10 hover:bg-white/5">Account Controls</Button>
-                </Link>
-             </div>
+                  <div className="flex items-center justify-between mb-2">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Available Credit</p>
+                     <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest bg-[#C5A069]/10 px-3 py-1 rounded-full border border-[#C5A069]/20">Active Node</p>
+                  </div>
+                  <h4 className="text-6xl font-black tracking-tighter mb-10 tabular-nums">₦{balance.toLocaleString()}</h4>
+                  <div className="flex flex-wrap gap-4">
+                     <Button 
+                        onClick={() => setShowTopUp(true)}
+                        className="h-14 px-10 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-900 hover:bg-[#C5A069] hover:text-[#0B1D45] shadow-2xl shadow-white/5 transition-all gap-2"
+                     >
+                        <Plus size={16} /> Deposit Funds
+                     </Button>
+                     <Button variant="ghost" className="h-14 px-8 rounded-full text-[10px] font-black uppercase tracking-widest text-white border border-white/10 hover:bg-white/5 flex items-center gap-2">
+                        Statement <ArrowDownLeft size={16} />
+                     </Button>
+                  </div>
                </div>
                <div className="absolute bottom-0 right-0 p-10 opacity-5 -mb-10 -mr-10">
                   <Wallet size={200} />
                </div>
+               <div className="absolute top-0 right-0 w-32 h-32 bg-[#C5A069] rounded-full blur-[100px] opacity-10"></div>
             </div>
             
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:bg-blue-50 transition-colors"></div>
                <h3 className="font-black text-slate-900 text-2xl tracking-tighter mb-4 flex items-center justify-between italic uppercase">
                   Care Guarantee
-                  <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest not-italic border border-blue-100">VACS PROTECT™</span>
+                  <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest not-italic border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all">VACS PROTECT™</span>
                </h3>
                <p className="text-sm text-slate-500 leading-relaxed mb-8 font-medium">
-                  If hospitalization occurs, our <span className="text-slate-900 font-bold">Clinical Retention Clause</span> reduces billing to a 25% standby rate, ensuring your dedicated caregiver is reserved for your return.
+                  If hospitalization occurs, our <span className="text-slate-900 font-bold underline decoration-[#C5A069] underline-offset-4 decoration-2">Clinical Retention Clause</span> reduces billing to a 25% standby rate, ensuring your dedicated caregiver is reserved for your return.
                </p>
-               <div className="p-5 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 flex items-center justify-between">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Retention Mode Status</span>
-                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-3 py-1 rounded-full">Inactive</span>
+               <div className="p-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 flex items-center justify-between">
+                  <div>
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Retention Mode Status</p>
+                     <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Awaiting Trigger</p>
+                  </div>
+                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-4 py-2 rounded-xl border border-rose-100">Inactive</span>
                </div>
             </div>
          </div>
 
          <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm">
-            <div className="p-8 border-b border-slate-100 bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
-               <h3 className="font-black text-slate-900 text-xl tracking-tight uppercase italic">Financial Ledger</h3>
-               <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cycle: Regional Weekly Audit</span>
-                  <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest underline underline-offset-4">Statement Archive</button>
+            <div className="p-10 border-b border-slate-100 bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+               <div>
+                  <h3 className="font-black text-slate-900 text-2xl tracking-tight uppercase italic">Financial Ledger</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Managed Transaction Node • Historical Record</p>
+               </div>
+               <div className="flex items-center gap-6">
+                  <div className="text-right">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cycle Type</p>
+                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Regional Weekly Audit</p>
+                  </div>
+                  <button className="h-10 px-6 bg-white border border-slate-200 rounded-xl text-[9px] font-black text-blue-600 uppercase tracking-widest hover:border-blue-500 hover:text-blue-700 transition-all shadow-sm">Statement Archive</button>
                </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left font-sans">
-                 <thead className="bg-slate-50 uppercase text-[9px] font-black tracking-[0.2em] text-slate-500">
+                 <thead className="bg-slate-50 text-[9px] font-black tracking-[0.2em] text-slate-500 uppercase">
                     <tr>
-                       <th className="px-8 py-5">Invoice Node</th>
-                       <th className="px-8 py-5">Engagement Period</th>
-                       <th className="px-8 py-5 text-right">Credits</th>
-                       <th className="px-8 py-5">Verified Status</th>
-                       <th className="px-8 py-5">Action</th>
+                       <th className="px-10 py-6">Invoice Node</th>
+                       <th className="px-10 py-6">Engagement Period</th>
+                       <th className="px-10 py-6 text-right">Credits</th>
+                       <th className="px-10 py-6">Verified Status</th>
+                       <th className="px-10 py-6 text-right">Action</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-100">
-                    <InvoiceRow id="VACS-INV-0042" period="Mar 01 - Mar 07" amount="420.00" status="PAID" />
-                    <InvoiceRow id="VACS-INV-0041" period="Feb 22 - Feb 28" amount="420.00" status="PAID" />
-                    <InvoiceRow id="VACS-INV-0040" period="Feb 15 - Feb 21" amount="480.00" status="PAID" />
+                    <InvoiceRow id="VACS-INV-0042" period="Mar 01 - Mar 07" amount="420,000" status="PAID" />
+                    <InvoiceRow id="VACS-INV-0041" period="Feb 22 - Feb 28" amount="420,000" status="PAID" />
+                    <InvoiceRow id="VACS-INV-0040" period="Feb 15 - Feb 21" amount="480,000" status="PAID" />
                  </tbody>
               </table>
             </div>
@@ -529,35 +373,321 @@ function ClientBilling() {
 function InvoiceRow({ id, period, amount, status }: any) {
    return (
       <tr className="hover:bg-slate-50 transition-colors group">
-         <td className="px-8 py-6 text-sm font-black text-slate-900 italic tracking-tight">{id}</td>
-         <td className="px-8 py-6 text-[11px] text-slate-500 font-mono italic tracking-tighter">{period}</td>
-         <td className="px-8 py-6 text-sm font-black text-slate-900 text-right tracking-tighter">₦{amount}</td>
-         <td className="px-8 py-6">
+         <td className="px-10 py-8 text-sm font-black text-slate-900 italic tracking-tight">{id}</td>
+         <td className="px-10 py-8 text-[11px] text-slate-500 font-mono italic tracking-tighter">{period}</td>
+         <td className="px-10 py-8 text-sm font-black text-slate-900 text-right tracking-tighter">₦{amount}</td>
+         <td className="px-10 py-8">
             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-lg border border-emerald-100 uppercase tracking-widest">{status}</span>
          </td>
-         <td className="px-8 py-6">
-            <Button variant="ghost" size="sm" className="text-blue-600 h-10 px-6 rounded-full border border-slate-100 hover:bg-white hover:shadow-lg hover:border-blue-200 text-[10px] font-black uppercase tracking-widest underline">Record View</Button>
+         <td className="px-10 py-8 text-right">
+            <Button variant="ghost" size="sm" className="text-blue-600 h-10 px-6 rounded-xl border border-slate-100 hover:bg-white hover:shadow-lg hover:border-blue-200 text-[9px] font-black uppercase tracking-widest underline underline-offset-4">Record View</Button>
          </td>
       </tr>
    );
 }
 
-function ChevronRight({ size, className }: any) {
-   return (
-      <svg 
-         xmlns="http://www.w3.org/2000/svg" 
-         width={size} 
-         height={size} 
-         viewBox="0 0 24 24" 
-         fill="none" 
-         stroke="currentColor" 
-         strokeWidth="3" 
-         strokeLinecap="round" 
-         strokeLinejoin="round" 
-         className={className}
-      >
-         <path d="m9 18 6-6-6-6"/>
-      </svg>
-   );
+function ClientOverview({ client, wallet }: any) {
+  const [isHospitalized, setIsHospitalized] = useState(false);
+  const [caregiver, setCaregiver] = useState<any>(null);
+  const [supervisor, setSupervisor] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCareTeam() {
+      if (!client?.assignedStaffId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const cgDoc = await getDoc(doc(db, "users", client.assignedStaffId));
+        if (cgDoc.exists()) {
+          const cgData = cgDoc.data();
+          setCaregiver(cgData);
+
+          if (cgData.supervisorId) {
+            const svDoc = await getDoc(doc(db, "users", cgData.supervisorId));
+            if (svDoc.exists()) {
+              setSupervisor(svDoc.data());
+            }
+          }
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, "users/care-team");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCareTeam();
+  }, [client?.assignedStaffId]);
+
+  const displayName = client.fullName || client.full_name || "Client";
+  const balance = wallet?.balance || 0;
+
+  return (
+    <div className="space-y-10">
+       {/* Poaching Warning Banner */}
+       <div className="bg-red-50 border border-red-100 p-4 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+                <ShieldAlert size={18} />
+             </div>
+             <p className="text-[10px] font-black text-red-900 uppercase tracking-widest leading-relaxed">
+                <span className="text-red-600">Protocol Alert:</span> Private hiring of VACS staff is a breach of the Service Agreement (Penalty: ₦500,000).
+             </p>
+          </div>
+          <button className="text-[9px] font-black uppercase tracking-widest text-red-600 underline">Read Agreement</button>
+       </div>
+
+       <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center gap-10 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <div className="w-28 h-28 rounded-3xl overflow-hidden bg-slate-100 shrink-0 border-4 border-white shadow-xl relative z-10">
+             <img src={client.profileImage || "https://images.unsplash.com/photo-1544120190-27583f2274a2?q=80&w=400"} alt="Patient" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 relative z-10">
+             <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{displayName}</h3>
+                <span className={cn(
+                  "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
+                  isHospitalized ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                )}>
+                  {isHospitalized ? "HOSPITALIZED (RETENTION MODE)" : "Active Care"}
+                </span>
+             </div>
+             <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500" /> Tier 2 Case Protocol</span>
+                <span className="flex items-center gap-2"><Calendar size={14} className="text-slate-300" /> ID: {client.id?.slice(0, 8)}</span>
+             </div>
+          </div>
+          <div className="flex flex-col gap-4">
+             <div className="bg-slate-900 text-white p-8 rounded-[2rem] text-center min-w-[240px] shadow-2xl relative z-10 border border-slate-800">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 uppercase">Account Ledger</p>
+                <h4 className="text-4xl font-black tracking-tighter mb-4 tabular-nums">₦{balance.toLocaleString()}</h4>
+                <Link to="/client/billing" className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Deposit Clinical Credits</Link>
+             </div>
+             <Button 
+               onClick={() => setIsHospitalized(!isHospitalized)}
+               variant={isHospitalized ? "primary" : "outline"}
+               className={cn(
+                 "h-12 rounded-2xl text-[9px] font-black uppercase tracking-widest border-2",
+                 isHospitalized ? "bg-emerald-600 border-none" : "border-amber-200 text-amber-600 hover:bg-amber-50"
+               )}
+             >
+               {isHospitalized ? "Resume Standard Protocol" : "Trigger Pulse Clause (Hospitalized)"}
+             </Button>
+          </div>
+       </div>
+
+       {/* Diagnostic Vitals Protocol */}
+       <div className="grid lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm">
+             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div>
+                   <h3 className="font-black text-slate-900 text-2xl tracking-tighter italic uppercase underline decoration-[#C5A069]/30 decoration-4 underline-offset-8">Clinical Vitals Node</h3>
+                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Real-time physiological telemetry</p>
+                </div>
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+                   <Clock size={16} className="text-[#C5A069]" />
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">SYNCED: 14:45</span>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <VitalMetric icon={<Thermometer className="text-orange-500" size={18} />} label="Temp" value="98.6" unit="°F" />
+                <VitalMetric icon={<Heart className="text-rose-500" size={18} />} label="HR" value="72" unit="BPM" />
+                <VitalMetric icon={<Zap className="text-blue-500" size={18} />} label="BG" value="110" unit="mg/dL" />
+                <VitalMetric icon={<Activity className="text-emerald-500" size={18} />} label="SYS" value="120" unit="mmHg" />
+                <VitalMetric icon={<Activity className="text-emerald-500" size={18} />} label="DIA" value="80" unit="mmHg" />
+                <VitalMetric icon={<Activity className="text-sky-500" size={18} />} label="SpO2" value="98" unit="%" />
+             </div>
+          </div>
+
+          <div className="bg-[#0B1D45] p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
+             <div className="relative z-10">
+                <h4 className="text-[10px] font-black text-[#C5A069] uppercase tracking-[0.3em] mb-8">Clinical Reminders</h4>
+                <div className="space-y-6">
+                   <ReminderItem time="16:00" text="Medication: Tier 2 Hypertension Protocol" status="PENDING" />
+                   <ReminderItem time="18:30" text="Nutritional Audit: Evening Meal hydration" status="UPCOMING" />
+                   <div className="pt-6 border-t border-white/10">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 italic">Protocol Policy Guide</p>
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-xs text-white/70 italic leading-relaxed">
+                         "Reminders follow the VACS Zero-Latency policy. Late logs trigger immediate RN oversight calls."
+                      </div>
+                   </div>
+                </div>
+             </div>
+             <Clock size={180} className="absolute -bottom-10 -right-10 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-1000" />
+          </div>
+       </div>
+
+       {/* Caregiver Identity Protocol */}
+       {caregiver ? (
+          <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 group-hover:scale-110 transition-transform duration-1000"></div>
+             <div className="flex flex-col gap-10 relative z-10">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+                   <div className="flex flex-col md:flex-row items-center gap-8">
+                      <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-slate-100 border-4 border-white shadow-2xl shrink-0 group-hover:rotate-3 transition-transform">
+                         <img 
+                           src={caregiver.profileImage || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400"} 
+                           alt="Caregiver" 
+                           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                         />
+                      </div>
+                      <div className="text-center md:text-left">
+                         <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">{caregiver.fullName || caregiver.full_name}</h3>
+                            <span className={cn(
+                              "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm",
+                              caregiver.verificationStatus === 'VERIFIED' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-600 border-red-100"
+                            )}>
+                              {caregiver.verificationStatus === 'VERIFIED' ? "CLEARED FOR FIELD DISPATCH" : "Dispatch Suspended"}
+                            </span>
+                         </div>
+                         <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] leading-none mb-1">Authenticated Professional Profile</p>
+                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            {caregiver.role === 'CAREGIVER' ? 'HEALTH CARE ASSISTANT' : caregiver.role} • LICENSED IN FIELD • ID: #{caregiver.id?.slice(0, 8)}
+                         </p>
+                      </div>
+                   </div>
+                   
+                   <div className="grid sm:grid-cols-2 gap-4">
+                      <CaregiverContactItem 
+                        icon={<Phone size={16} className="text-[#C5A069]" />} 
+                        label="Secure Voice Node" 
+                        value={caregiver.phoneNumber || caregiver.phone || "Encrypted Line"} 
+                      />
+                      <CaregiverContactItem 
+                        icon={<Mail size={16} className="text-[#C5A069]" />} 
+                        label="Protocol Relay Email" 
+                        value={caregiver.email || "Encrypted Registry"} 
+                      />
+                   </div>
+                </div>
+
+                <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 italic flex items-center gap-2">
+                       <ShieldCheck size={14} className="text-[#C5A069]" /> Professional Narrative & Domain Expertise
+                   </p>
+                   <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                      {caregiver.bio || "Field Professional with specialized training in Tier 2 Chronic Care Management and geriatric respiratory support. Certified under the VACS clinical audit protocol."}
+                   </p>
+                </div>
+             </div>
+          </div>
+       ) : (
+          <div className="p-20 bg-white border border-slate-200 border-dashed rounded-[3rem] text-center opacity-40">
+             <p className="text-sm font-black uppercase tracking-widest text-slate-400 italic">No Field Staff Assigned to this Node</p>
+          </div>
+       )}
+    </div>
+  );
 }
 
+export default function ClientDashboard({ user: initialUser, onLogout }: any) {
+  const [user, setUser] = useState(initialUser);
+  const [wallet, setWallet] = useState<any>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    
+    const unsubUser = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
+      if (snapshot.exists()) {
+        setUser({ ...auth.currentUser, ...snapshot.data() });
+      }
+    });
+
+    const unsubWallet = onSnapshot(doc(db, "users", auth.currentUser.uid, "wallet", "main"), (snapshot) => {
+      if (snapshot.exists()) {
+        setWallet(snapshot.data());
+      } else {
+        setWallet({ balance: 0, currency: 'NGN' });
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${auth.currentUser?.uid}/wallet/main`);
+    });
+
+    return () => {
+       unsubUser();
+       unsubWallet();
+    };
+  }, []);
+
+  const menuItems = [
+    { path: "/client", label: "Care Protocol", icon: Heart },
+    { path: "/client/downloads", label: "App Gateway", icon: Download },
+    { path: "/client/logs", label: "Clinical Logs", icon: History },
+    { path: "/client/billing", label: "Financial Ledger", icon: Wallet },
+    { path: "/client/schedule", label: "Service Calendar", icon: Calendar },
+    { path: "/client/support", label: "Protocol Support", icon: MessageSquare },
+  ];
+
+  const notifications = [
+     { id: 1, type: 'ALERT', text: 'Caregiver Emma Wilson checked in at 08:02 AM.', time: '2h ago' },
+     { id: 2, type: 'INFO', text: 'Vital Protocol March 11 verified by RN.', time: '5h ago' },
+     { id: 3, type: 'WARNING', text: 'Wallet balance below ₦50,000. Top up soon.', time: '1d ago' },
+  ];
+
+  return (
+    <div className="relative">
+      <DashboardLayout user={user} onLogout={onLogout} menuItems={menuItems}>
+        <div className="absolute top-8 right-8 z-[60] flex gap-4">
+           <button 
+             onClick={() => setShowNotifications(true)}
+             className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all relative group"
+           >
+              <Bell size={20} />
+              <span className="absolute top-3 right-3 w-2 h-2 bg-[#C5A069] rounded-full animate-pulse border border-[#0B1D45]"></span>
+           </button>
+        </div>
+
+        <Routes>
+          <Route index element={<ClientOverview client={user} wallet={wallet} />} />
+          <Route path="downloads" element={<AppDownloadCenter role="client" />} />
+          <Route path="logs" element={<ClientCareLogs />} />
+          <Route path="billing" element={<ClientBilling wallet={wallet} />} />
+          <Route path="support" element={<ClientSupport />} />
+          <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-[0.3em] italic mt-20 opacity-40">Connecting to clinical node...</div>} />
+        </Routes>
+      </DashboardLayout>
+
+      {/* Notifications Overlay */}
+      <AnimatePresence>
+         {showNotifications && (
+            <>
+               <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  onClick={() => setShowNotifications(false)}
+                  className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]"
+               />
+               <motion.div 
+                  initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                  className="fixed top-0 right-0 h-screen w-full max-w-sm bg-white z-[101] shadow-2xl flex flex-col"
+               >
+                  <div className="p-10 border-b border-slate-100 flex items-center justify-between">
+                     <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">System Bell</h3>
+                     <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-slate-900"><X size={24} /></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                     {notifications.map(n => (
+                        <div key={n.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex gap-4">
+                           <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-slate-200 shrink-0">
+                              {n.type === 'ALERT' ? <Zap size={16} className="text-blue-500" /> : <ShieldAlert size={16} className="text-amber-500" />}
+                           </div>
+                           <div>
+                              <p className="text-xs font-bold text-slate-900 leading-relaxed">{n.text}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">{n.time}</p>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               </motion.div>
+            </>
+         )}
+      </AnimatePresence>
+    </div>
+  );
+}

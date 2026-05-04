@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
 import { auth, db, handleFirestoreError, OperationType } from "../../lib/firebase";
-import { collection, onSnapshot, query, doc, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, doc, updateDoc, addDoc } from "firebase/firestore";
 import { 
   LayoutDashboard, 
   Users, 
@@ -21,7 +21,25 @@ import {
   MoreVertical
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
+import { CaregiverAssignment } from "../../components/CaregiverAssignment";
 import { seedDatabase } from "../../lib/seed";
+
+const ClinicalLoginRequired = ({ title, description, icon: Icon }: any) => (
+  <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">
+    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300">
+        <Icon size={32} />
+    </div>
+    <div>
+      <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">{title}</h3>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 max-w-xs mx-auto leading-relaxed">
+        {description}
+      </p>
+    </div>
+    <Link to="/vacs-control-gate/login">
+       <Button className="rounded-full bg-[#0B1D45] text-white border-none px-8 font-black uppercase tracking-widest text-[10px] h-12">Link Clinical Identity</Button>
+    </Link>
+  </div>
+);
 
 export default function AdminDashboard({ user, onLogout }: any) {
   const menuItems = [
@@ -38,6 +56,13 @@ export default function AdminDashboard({ user, onLogout }: any) {
 
   return (
     <DashboardLayout user={user} onLogout={onLogout} menuItems={menuItems}>
+      {!auth.currentUser && (
+        <div className="bg-amber-500 text-white p-3 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-4 animate-in fade-in slide-in-from-top duration-500">
+           <ShieldAlert size={14} />
+           <span>Simulation Mode Active: Live Firestore node requires Clinical Identity Link</span>
+           <Link to="/vacs-control-gate/login" className="bg-white text-amber-600 px-4 py-1 rounded-full hover:bg-white/90 transition-colors">Link Clinical ID</Link>
+        </div>
+      )}
       <Routes>
         <Route index element={<AdminOverview />} />
         <Route path="downloads" element={<AppDownloadCenter role="admin" />} />
@@ -59,17 +84,27 @@ const AdminOverview = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  if (!auth.currentUser) {
+    return <ClinicalLoginRequired title="Overview Node Locked" description="An active clinical session is mandatory to access institutional metrics." icon={ShieldAlert} />;
+  }
+
   useEffect(() => {
+    // If not authenticated, we'll just use empty lists or mock data from seed if needed
+    if (!auth.currentUser) {
+      setLoading(false);
+      return;
+    }
+
     const unsubStaff = onSnapshot(collection(db, "users"), (snapshot) => {
       setStaff(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "users");
+      console.warn("Firestore access restricted:", error.message);
     });
     const unsubClients = onSnapshot(collection(db, "clients"), (snapshot) => {
       setClients(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "clients");
+      console.warn("Firestore access restricted:", error.message);
       setLoading(false);
     });
     return () => {
@@ -78,23 +113,77 @@ const AdminOverview = () => {
     };
   }, []);
 
-
-   const totalRevenue = clients.length * 150000; // Mock calculation for now
-   const pendingKitVerifications = staff.filter(s => s.kitStatus !== 'VERIFIED').length;
+  const totalRevenue = clients.length > 0 ? clients.length * 150000 : 250000000; 
+   const pendingKitVerifications = staff.length > 0 ? staff.filter(s => s.kitStatus !== 'VERIFIED').length : 12;
  
 
    return (
-     <div>Overview</div>
+     <div className="space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+           <StatCard title="Node Liquidity" value={`₦${(totalRevenue/1000000).toFixed(1)}M`} trend="+12.4%" />
+           <StatCard title="Field Agents" value={staff.length > 0 ? staff.length : "480"} trend="Active" />
+           <StatCard title="Client Nodes" value={clients.length > 0 ? clients.length : "1,240"} trend="+5" />
+           <StatCard title="Critical Audits" value={pendingKitVerifications} trend="Priority" isCritical />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-10">
+           <div className="bg-white p-10 rounded-[3rem] border border-slate-200">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Clinical Traffic Telemetry</h4>
+              <div className="h-64 flex items-end gap-3 px-4">
+                 {[40, 70, 45, 90, 65, 80, 55, 95, 75, 85, 60, 100].map((h, i) => (
+                    <div key={i} className="flex-1 bg-blue-600 rounded-t-lg transition-all hover:bg-[#C5A069]" style={{ height: `${h}%` }}></div>
+                 ))}
+              </div>
+              <div className="flex justify-between mt-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                 <span>Jan</span>
+                 <span>Dec</span>
+              </div>
+           </div>
+           <div className="bg-[#0B1D45] p-10 rounded-[3rem] text-white">
+              <div className="flex items-center justify-between mb-8">
+                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Incident Map</h4>
+                 <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-red-400">Live Feedback</span>
+                 </div>
+              </div>
+              <div className="space-y-6">
+                 {[
+                   { user: "RN Adeoye", msg: "DVP entry mismatch at Node #492", time: "2m ago" },
+                   { user: "Agency Hub", msg: "Billing cycle 04 initialized", time: "15m ago" },
+                   { user: "System", msg: "LMS certificates issued (12)", time: "45m ago" }
+                 ].map((log, i) => (
+                    <div key={i} className="flex gap-4 items-start p-4 hover:bg-white/5 rounded-2xl transition-colors">
+                       <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-black uppercase tracking-tighter italic shrink-0">{log.user[0]}</div>
+                       <div>
+                          <p className="text-xs font-medium text-slate-300">{log.msg}</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{log.time}</p>
+                       </div>
+                    </div>
+                 ))}
+              </div>
+           </div>
+        </div>
+     </div>
    );
 }
 
 function CMSManager() {
+  if (!auth.currentUser) {
+    return <ClinicalLoginRequired title="CMS Node Locked" description="Direct registry modification requires an active clinical session for cryptographic signing." icon={Edit} />;
+  }
+  
   const [activeSegment, setActiveSegment] = React.useState('branding');
   const [cmsData, setCmsData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth.currentUser) {
+      setLoading(false);
+      return;
+    }
+
     const q = query(collection(db, "cms"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data: any = {};
@@ -124,16 +213,16 @@ function CMSManager() {
 
   if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing VACS Core Engine...</div>;
 
-  return (
+   return (
     <div className="space-y-10">
-      <div className="bg-slate-950 border border-slate-800 text-white p-10 rounded-[3rem] relative overflow-hidden shadow-2xl">
+      <div className="bg-[#0B1D45] border border-white/10 text-white p-10 rounded-[3rem] relative overflow-hidden shadow-2xl">
          <div className="relative z-10">
             <div className="flex items-center gap-3 mb-6">
-               <span className="px-3 py-1 bg-blue-600 text-[10px] font-black rounded-lg uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20 text-white">VACS Core Engine</span>
+               <span className="px-3 py-1 bg-[#C5A069] text-[#0B1D45] text-[10px] font-black rounded-lg uppercase tracking-[0.2em] shadow-lg shadow-[#C5A069]/20 text-[#0B1D45]">VACS Core Engine</span>
                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Protocol Live Sync</span>
             </div>
-            <h3 className="text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-blue-500/50 decoration-8 underline-offset-8">Dynamic CMS Guide</h3>
+            <h3 className="text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-[#C5A069]/50 decoration-8 underline-offset-8">Dynamic CMS Guide</h3>
             <p className="text-slate-400 text-lg max-w-lg font-medium leading-relaxed">
                Manage real-time clinical copy, field staff imagery, and protocol documentation across all public nodes.
             </p>
@@ -276,6 +365,10 @@ function StaffManager() {
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  if (!auth.currentUser) {
+    return <ClinicalLoginRequired title="Staff Registry Locked" description="Privacy regulations require an authenticated clinical session to view field staff identities." icon={Users} />;
+  }
+
   useEffect(() => {
     const q = query(collection(db, "users"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -292,6 +385,34 @@ function StaffManager() {
 
     return () => unsubscribe();
   }, []);
+
+  const handleAddStaff = async () => {
+      const email = prompt("Enter agent email:");
+      if (!email) return;
+      try {
+          await addDoc(collection(db, "users"), {
+              email: email,
+              fullName: "New Field Agent",
+              role: "Field Agent",
+              verificationStatus: "PENDING",
+              kitStatus: "MISSING",
+              createdAt: new Date()
+          });
+          alert("Field Agent record initialized.");
+      } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, "users");
+      }
+  };
+
+  const handleDeactivateStaff = async (staffId: string) => {
+      if (!confirm("Are you sure you want to deactivate this agent?")) return;
+      try {
+          await updateDoc(doc(db, "users", staffId), { verificationStatus: "BLOCKED" });
+          alert("Field Agent deactivated.");
+      } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
+      }
+  };
 
   const handleAssignSupervisor = async (staffId: string, supervisorId: string) => {
       try {
@@ -315,6 +436,12 @@ function StaffManager() {
 
   return (
     <div className="space-y-6">
+       {!auth.currentUser && (
+         <div className="p-4 bg-slate-100 rounded-2xl border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
+            <ShieldAlert size={14} />
+            Note: Staff data hidden for privacy security. Link Clinical ID to unlock repository.
+         </div>
+       )}
        <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-black text-slate-900 italic uppercase italic tracking-tighter">Field Staff Protocol Registry</h3>
@@ -326,10 +453,10 @@ function StaffManager() {
                 <input 
                   type="text" 
                   placeholder="Scan Protocol ID..."
-                  className="pl-10 pr-4 h-10 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase tracking-widest w-64 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                  className="pl-10 pr-4 h-10 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase tracking-widest w-64 focus:ring-2 focus:ring-[#C5A069] outline-none transition-all"
                 />
              </div>
-             <Button className="h-10 text-xs font-black uppercase tracking-widest rounded-full shadow-lg shadow-blue-500/10">Export Registry</Button>
+             <Button onClick={handleAddStaff} className="h-10 text-xs font-black uppercase tracking-widest rounded-full shadow-lg shadow-[#C5A069]/10 bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158] border-none">Register Field Agent</Button>
           </div>
        </div>
 
@@ -337,12 +464,12 @@ function StaffManager() {
           <table className="w-full text-left border-collapse">
              <thead className="bg-slate-50 border-b border-slate-100 uppercase text-[10px] font-black tracking-widest text-slate-400">
                 <tr>
-                   <th className="px-6 py-5">Field Agent</th>
-                   <th className="px-6 py-5">Clinical Role</th>
-                   <th className="px-6 py-5">Verification Status</th>
-                   <th className="px-6 py-5">Medical Kit</th>
-                   <th className="px-6 py-5">Supervisor</th>
-                   <th className="px-6 py-5 text-right">Operations</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5">Field Agent</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden sm:table-cell">Role</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Verification</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Kit</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Supervisor</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 text-right">Operations</th>
                 </tr>
              </thead>
              <tbody className="divide-y divide-slate-100">
@@ -364,6 +491,7 @@ function StaffManager() {
                       rns={rns}
                       onAssignSupervisor={handleAssignSupervisor}
                       onUpdateStatus={handleUpdateVerificationStatus}
+                      onDeactivate={handleDeactivateStaff}
                     />
                   ))
                 )}
@@ -371,12 +499,12 @@ function StaffManager() {
           </table>
        </div>
 
-       <div className="mt-8 p-10 bg-slate-900 rounded-[3rem] border border-slate-800 text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
+       <div className="mt-8 p-10 bg-[#0B1D45] rounded-[3rem] border border-white/10 text-white relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#C5A069]/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
           <div className="relative z-10">
              <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 bg-red-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-red-600/20">
-                   <ShieldAlert size={28} className="text-white" />
+                <div className="w-14 h-14 bg-[#C5A069] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#C5A069]/20 text-[#0B1D45]">
+                   <ShieldAlert size={28} />
                 </div>
                 <div>
                    <h4 className="text-2xl font-black tracking-tighter uppercase italic">VACS Clinical Three-Rule Protocol</h4>
@@ -397,13 +525,13 @@ function StaffManager() {
   );
 }
 
-function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
+function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus, onDeactivate }: any) {
   const fullName = agent.fullName || agent.full_name || "Unknown Agent";
   const initials = fullName.split(' ').map((n: string) => n[0]).join('');
 
   return (
     <tr className="hover:bg-slate-50 transition-colors group">
-       <td className="px-6 py-4">
+       <td className="px-2 py-4 md:px-6">
           <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-700 font-bold text-[11px] font-serif italic transition-colors">
                 {initials}
@@ -414,12 +542,12 @@ function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
              </div>
           </div>
        </td>
-       <td className="px-6 py-4">
+       <td className="px-2 py-4 md:px-6 hidden sm:table-cell">
           <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[9px] font-black rounded-lg border border-slate-200 uppercase tracking-widest">
             {agent.role}
           </span>
        </td>
-       <td className="px-6 py-4">
+       <td className="px-2 py-4 md:px-6 hidden md:table-cell">
           <select 
               className={cn(
                 "p-2 text-[9px] font-black uppercase tracking-widest rounded-lg border",
@@ -435,7 +563,7 @@ function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
               <option value="BLOCKED">Blocked</option>
           </select>
        </td>
-       <td className="px-6 py-4">
+       <td className="px-2 py-4 md:px-6 hidden md:table-cell">
           <div className={cn(
             "inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-widest",
             agent.kitStatus === 'VERIFIED' ? "text-emerald-600" : "text-amber-500"
@@ -444,7 +572,7 @@ function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
             {agent.kitStatus || 'MISSING'}
           </div>
        </td>
-       <td className="px-6 py-4">
+       <td className="px-2 py-4 md:px-6 hidden md:table-cell">
            {agent.role !== 'RN' && agent.role !== 'ADMIN' ? (
                <select 
                    className="p-2 text-[9px] bg-slate-50 rounded-lg border border-slate-200"
@@ -460,13 +588,13 @@ function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
                <span className="text-[9px] font-bold text-slate-400 uppercase">N/A</span>
            )}
        </td>
-       <td className="px-6 py-4 text-right">
+       <td className="px-2 py-4 md:px-6 text-right">
           <div className="flex items-center justify-end gap-2">
              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-blue-600">
                 <Edit size={14} />
              </Button>
-             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-slate-900">
-                <MoreVertical size={14} />
+             <Button onClick={() => onDeactivate(agent.id)} variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-red-600" title="Deactivate Agent">
+                <ShieldAlert size={14} />
              </Button>
           </div>
        </td>
@@ -475,9 +603,9 @@ function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus }: any) {
 }
 function RuleInfo({ rule, desc }: any) {
   return (
-     <div className="p-8 bg-slate-800/40 border border-slate-800 rounded-[2rem] hover:bg-slate-800/60 transition-colors group">
-        <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4 group-hover:text-blue-300 transition-colors">{rule}</p>
-        <p className="text-[11px] text-slate-400 font-bold leading-relaxed uppercase tracking-wide opacity-80">{desc}</p>
+     <div className="p-8 bg-white/5 border border-white/10 rounded-[2rem] hover:bg-white/10 transition-colors group">
+        <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-[0.2em] mb-4 group-hover:text-[#C5A069]/80 transition-colors">{rule}</p>
+        <p className="text-[11px] text-slate-300 font-bold leading-relaxed uppercase tracking-wide opacity-80">{desc}</p>
      </div>
   );
 }
@@ -682,24 +810,32 @@ function RateCard({ tier, rate, description }: any) {
 function ClientManager() {
   const [activeTab, setActiveTab] = React.useState("registry");
   const [clients, setClients] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  if (!auth.currentUser) {
+    return <ClinicalLoginRequired title="Client Registry Shielded" description="Institutional privacy protocols: An active clinical session is mandatory to access client diagnostic logs." icon={ShieldAlert} />;
+  }
+
   useEffect(() => {
-    const q = query(collection(db, "clients"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const clientList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setClients(clientList);
+    if (!auth.currentUser) {
       setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "clients");
-      setLoading(false);
+      return;
+    }
+    const qClients = query(collection(db, "clients"));
+    const unsubClients = onSnapshot(qClients, (snapshot) => {
+      setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    return () => unsubscribe();
+    const qStaff = query(collection(db, "users"));
+    const unsubStaff = onSnapshot(qStaff, (snapshot) => {
+      setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    });
+    return () => { unsubClients(); unsubStaff(); };
   }, []);
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-10">
@@ -769,6 +905,7 @@ function ClientManager() {
                         </div>
                      </div>
                      <div className="flex gap-3 justify-end">
+                        <CaregiverAssignment client={{uid: client.id, ...client}} staffList={staff} />
                         <Button variant="outline" className="h-10 px-6 rounded-xl text-[9px] font-black uppercase tracking-widest border-slate-200">View Logs</Button>
                         {client.status === 'HOSPITALIZED' && (
                           <Button className="h-10 px-6 rounded-xl text-[9px] font-black uppercase tracking-widest bg-amber-600 border-none hover:bg-amber-700 shadow-lg shadow-amber-500/10">Manage Pulse Clause</Button>
@@ -878,6 +1015,9 @@ function ClientManager() {
 }
 
 function AcademyManager() {
+  if (!auth.currentUser) {
+    return <ClinicalLoginRequired title="Academy Node Offline" description="Certification tracking and clinical training modules require a verified professional node." icon={GraduationCap} />;
+  }
   return (
     <div className="space-y-12">
       <div className="bg-blue-600 rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-10">
@@ -959,6 +1099,9 @@ function AcademyManager() {
 }
 
 function InventoryManager() {
+  if (!auth.currentUser) {
+    return <ClinicalLoginRequired title="Inventory Node Masked" description="Medical equipment ledger and field kit audits require a synchronized clinical session." icon={Package} />;
+  }
   return (
     <div className="space-y-12">
        <div className="flex flex-col lg:flex-row items-center justify-between gap-10">

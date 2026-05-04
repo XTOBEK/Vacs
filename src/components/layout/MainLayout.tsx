@@ -22,12 +22,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
     const unsubBranding = onSnapshot(doc(db, "cms", "branding"), (doc) => {
       if (doc.exists()) setCmsBranding(doc.data());
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, "cms/branding");
+      console.warn("CMS Branding Error:", error);
     });
     const unsubContact = onSnapshot(doc(db, "cms", "contact"), (doc) => {
       if (doc.exists()) setCmsContact(doc.data());
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, "cms/contact");
+      console.warn("CMS Contact Error:", error);
     });
     return () => {
       unsubBranding();

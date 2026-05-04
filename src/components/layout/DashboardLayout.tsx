@@ -32,6 +32,8 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
   const location = useLocation();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -63,18 +65,32 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
     return () => unsubscribe();
   }, []);
 
+  const isSuper = localStorage.getItem("isSuperAuthenticated") === "true";
+  const displayUser = user || (isSuper ? { role: 'SUPER_ADMIN', full_name: 'Super Admin', email: 'root@vacs.io' } : null);
+
+  if (!displayUser) return null;
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
-        <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center space-x-3">
+      <aside className={cn(
+        "fixed md:static inset-y-0 left-0 bg-[#0B1D45] text-white flex flex-col shrink-0 transition-all duration-300 z-50",
+        isSidebarExpanded ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0",
+        isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center space-x-3 overflow-hidden">
             <Logo size="sm" inverted />
-            <div className="flex flex-col leading-none">
-              <span className="text-sm font-black tracking-widest text-[#C5A069] uppercase">VACS</span>
-              <span className="text-[8px] font-black tracking-[0.3em] text-slate-500 uppercase">Registry Node</span>
-            </div>
+            {isSidebarExpanded && (
+              <div className="flex flex-col leading-none">
+                <span className="text-sm font-black tracking-widest text-[#C5A069] uppercase">VACS</span>
+                <span className="text-[8px] font-black tracking-[0.3em] text-slate-500 uppercase">Registry Node</span>
+              </div>
+            )}
           </div>
+          <button onClick={() => setIsSidebarExpanded(!isSidebarExpanded)} className="hidden md:block p-1 hover:bg-white/10 rounded">
+            {isSidebarExpanded ? "«" : "»"}
+          </button>
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
@@ -85,35 +101,38 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
               className={cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 location.pathname === item.path 
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#C5A069] text-[#0B1D45] shadow-lg shadow-[#C5A069]/20" 
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
               )}
             >
               <item.icon size={18} />
-              {item.label}
+              {isSidebarExpanded && item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <div className="bg-slate-800 rounded-xl p-4">
-            <div className="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-wider">Role: {user.role?.replace('_', ' ')}</div>
+        <div className="p-4 border-t border-white/10 overflow-hidden">
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <div className="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-wider">Node: {displayUser.role?.replace('_', ' ')}</div>
             <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 mr-3 text-xs font-bold font-serif italic">
-                {user.full_name?.split(' ').map((n: string) => n[0]).join('')}
+              <div className="w-8 h-8 rounded-full bg-[#C5A069] flex items-center justify-center text-[#0B1D45] mr-3 text-xs font-bold font-serif italic">
+                {displayUser.full_name?.split(' ').map((n: string) => n[0]).join('')}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-semibold truncate text-white">{user.full_name}</div>
-                <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wide">Verified User</div>
+                <div className="text-sm font-semibold truncate text-white uppercase italic tracking-tighter">{displayUser.full_name}</div>
+                <div className="text-[10px] text-[#C5A069] font-black uppercase tracking-wide italic">{isSuper ? "Root Admin" : "Verified Node"}</div>
               </div>
             </div>
             <Button 
               variant="ghost" 
-              className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50 gap-2 mt-4 px-0 h-auto py-1 text-xs"
-              onClick={onLogout}
+              className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/10 gap-2 mt-4 px-0 h-auto py-1 text-[9px] font-black uppercase tracking-widest"
+              onClick={() => {
+                localStorage.removeItem("isSuperAuthenticated");
+                onLogout();
+              }}
             >
-              <LogOut size={12} />
-              Sign Out
+              <LogOut size={12} className="text-[#C5A069]" />
+              Disconnect
             </Button>
           </div>
         </div>
@@ -121,9 +140,12 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
 
       {/* Main Content Container */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
-          <div className="flex items-center gap-6">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
+          <div className="flex items-center gap-4">
+             <button onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} className="md:hidden p-2">
+                <span className="text-2xl">≡</span>
+             </button>
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
               {menuItems.find((m: any) => m.path === location.pathname)?.label || "Overview"}
             </h2>
             <div className="hidden lg:flex items-center gap-3 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
@@ -175,13 +197,13 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl z-[101] flex flex-col border-l border-white/20"
               >
-                <div className="p-8 bg-slate-900 text-white flex items-center justify-between">
+                <div className="p-8 bg-[#0B1D45] text-white flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-black italic uppercase tracking-tighter">Clinical Notifications</h3>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Real-time Command Feed</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[#C5A069] mt-1">Real-time Command Feed</p>
                   </div>
                   <button onClick={() => setIsNotifOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
-                    <X size={20} />
+                    <X size={20} className="text-[#C5A069]" />
                   </button>
                 </div>
 
@@ -194,6 +216,51 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">
                       Ensure you follow the <span className="text-slate-900 font-bold italic">"Clean Hand"</span> logic before any vital diagnostic engagement.
                     </p>
+                  </div>
+
+                   <div className="p-4 bg-[#0B1D45] rounded-2xl border border-white/10 shadow-xl group">
+                    <div className="flex items-center justify-between mb-4">
+                       <h4 className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest">Protocol Buzzer System</h4>
+                       <Zap size={14} className="text-[#C5A069]" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       <Button 
+                          onClick={() => {
+                             const audio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_long.ogg");
+                             audio.play();
+                          }}
+                          className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
+                       >
+                          🚨 Critical Node
+                       </Button>
+                       <Button 
+                          onClick={() => {
+                             const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+                             audio.play();
+                          }}
+                          className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
+                       >
+                          🔔 Clinical Signal
+                       </Button>
+                       <Button 
+                          onClick={() => {
+                             const audio = new Audio("https://actions.google.com/sounds/v1/alarms/os2_warning_beep.ogg");
+                             audio.play();
+                          }}
+                          className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
+                       >
+                          ☢️ Breach Alert
+                       </Button>
+                       <Button 
+                          onClick={() => {
+                             const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
+                             audio.play();
+                          }}
+                          className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
+                       >
+                          ⚡ Rapid Pulse
+                       </Button>
+                    </div>
                   </div>
 
                   {notifications.map((n: any) => (
