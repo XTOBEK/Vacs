@@ -23,7 +23,7 @@ import {
   Info
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { auth, db } from "../../lib/firebase";
+import { auth, db, handleFirestoreError, OperationType } from "../../lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
 
 import Logo from "../ui/Logo";
@@ -72,13 +72,13 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
         const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setNotifications(list);
       }
-    }, (err) => console.log("Notifs listener error:", err));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, "notifications"));
 
     return () => unsubscribe();
   }, []);
 
-  const isSuper = localStorage.getItem("isSuperAuthenticated") === "true";
-  const displayUser = user || (isSuper ? { role: 'SUPER_ADMIN', full_name: 'Super Admin', email: 'root@vacs.io' } : null);
+  const displayUser = user;
+  const isSuper = displayUser?.email === "princewill.iwuoha@gmail.com";
 
   if (!displayUser) return null;
 
@@ -87,7 +87,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
       {/* Sidebar Navigation */}
       <aside className={cn(
         "fixed md:static inset-y-0 left-0 bg-[#0B1D45] text-white flex flex-col shrink-0 transition-all duration-300 z-50",
-        isSidebarExpanded ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0",
+        isFullscreenMode ? "hidden" : (isSidebarExpanded ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0"),
         isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
@@ -96,7 +96,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
             {isSidebarExpanded && (
               <div className="flex flex-col leading-none">
                 <span className="text-sm font-black tracking-widest text-[#C5A069] uppercase">VACS</span>
-                <span className="text-[8px] font-black tracking-[0.3em] text-slate-500 uppercase">Registry Node</span>
+                <span className="text-[8px] font-black tracking-[0.3em] text-slate-500 uppercase">Hub Registry</span>
               </div>
             )}
           </div>
@@ -110,6 +110,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
             <Link
               key={item.path}
               to={item.path}
+              onClick={() => setIsMobileSidebarOpen(false)}
               className={cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 location.pathname === item.path 
@@ -125,21 +126,20 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
 
         <div className="p-4 border-t border-white/10 overflow-hidden">
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-wider">Node: {displayUser.role?.replace('_', ' ')}</div>
+            <div className="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-wider">Access: {isSuper ? "ROOT ADMIN" : displayUser.role?.replace('_', ' ')}</div>
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-[#C5A069] flex items-center justify-center text-[#0B1D45] mr-3 text-xs font-bold font-serif italic">
-                {displayUser.full_name?.split(' ').map((n: string) => n[0]).join('')}
+                {displayUser.full_name?.split(' ').map((n: string) => n[0]).join('') || displayUser.fullName?.split(' ').map((n: string) => n[0]).join('')}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-semibold truncate text-white uppercase italic tracking-tighter">{displayUser.full_name}</div>
-                <div className="text-[10px] text-[#C5A069] font-black uppercase tracking-wide italic">{isSuper ? "Root Admin" : "Verified Node"}</div>
+                <div className="text-sm font-semibold truncate text-white uppercase italic tracking-tighter">{displayUser.full_name || displayUser.fullName}</div>
+                <div className="text-[10px] text-[#C5A069] font-black uppercase tracking-wide italic">{isSuper ? "Super Admin Portal" : "Verified Clinical Session"}</div>
               </div>
             </div>
             <Button 
               variant="ghost" 
               className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/10 gap-2 mt-4 px-0 h-auto py-1 text-[9px] font-black uppercase tracking-widest"
               onClick={() => {
-                localStorage.removeItem("isSuperAuthenticated");
                 onLogout();
               }}
             >
@@ -232,7 +232,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
 
                    <div className="p-4 bg-[#0B1D45] rounded-2xl border border-white/10 shadow-xl group">
                     <div className="flex items-center justify-between mb-4">
-                       <h4 className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest">Protocol Buzzer System</h4>
+                       <h4 className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest">Protocol Signal System</h4>
                        <Zap size={14} className="text-[#C5A069]" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -243,7 +243,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                           }}
                           className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
                        >
-                          🚨 Critical Node
+                          🚨 Critical Alert
                        </Button>
                        <Button 
                           onClick={() => {
@@ -252,7 +252,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                           }}
                           className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
                        >
-                          🔔 Clinical Signal
+                          🔔 Clinical Ping
                        </Button>
                        <Button 
                           onClick={() => {
@@ -261,7 +261,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                           }}
                           className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
                        >
-                          ☢️ Breach Alert
+                          ☢️ Security Protocol
                        </Button>
                        <Button 
                           onClick={() => {
@@ -270,7 +270,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                           }}
                           className="h-10 text-[8px] font-black uppercase bg-white/10 text-white hover:bg-white/20 border-none px-2"
                        >
-                          ⚡ Rapid Pulse
+                          ⚡ Vital Response
                        </Button>
                     </div>
                   </div>
@@ -297,7 +297,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
                   {notifications.length === 0 && (
                     <div className="py-20 text-center opacity-30">
                        <Bell size={48} className="mx-auto mb-4 text-slate-300" />
-                       <p className="text-xs font-black uppercase tracking-widest text-slate-400">Node quiet. No active alerts.</p>
+                       <p className="text-xs font-black uppercase tracking-widest text-slate-400">Hub quiet. No active alerts.</p>
                     </div>
                   )}
                 </div>

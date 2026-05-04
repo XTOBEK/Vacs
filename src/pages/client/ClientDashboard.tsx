@@ -485,7 +485,7 @@ function ClientOverview({ client, wallet }: any) {
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div>
                    <h3 className="font-black text-slate-900 text-2xl tracking-tighter italic uppercase underline decoration-[#C5A069]/30 decoration-4 underline-offset-8">Clinical Vitals Node</h3>
-                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Real-time physiological telemetry</p>
+                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Real-time physiological tracking</p>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
                    <Clock size={16} className="text-[#C5A069]" />

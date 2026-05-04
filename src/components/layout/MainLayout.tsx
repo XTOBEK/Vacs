@@ -7,6 +7,7 @@ import { db, handleFirestoreError, OperationType } from "../../lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
 import Logo from "../ui/Logo";
+import { auth } from "../../lib/firebase";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,18 +17,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [cmsBranding, setCmsBranding] = useState<any>(null);
   const [cmsContact, setCmsContact] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const location = useLocation();
+
+  useEffect(() => {
+     const unsub = auth.onAuthStateChanged(u => setUser(u));
+     return unsub;
+  }, []);
 
   useEffect(() => {
     const unsubBranding = onSnapshot(doc(db, "cms", "branding"), (doc) => {
       if (doc.exists()) setCmsBranding(doc.data());
     }, (error) => {
-      console.warn("CMS Branding Error:", error);
+      handleFirestoreError(error, OperationType.GET, "cms/branding");
     });
     const unsubContact = onSnapshot(doc(db, "cms", "contact"), (doc) => {
       if (doc.exists()) setCmsContact(doc.data());
     }, (error) => {
-      console.warn("CMS Contact Error:", error);
+      handleFirestoreError(error, OperationType.GET, "cms/contact");
     });
     return () => {
       unsubBranding();
@@ -71,9 +78,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
               </Link>
             ))}
             <div className="h-4 w-px bg-slate-200"></div>
-            <Link to="/superadmin" className="text-rose-500 hover:text-rose-400 transition-colors">Super Admin</Link>
             <Link to="/staff-login" className="hover:text-blue-600 transition-colors text-slate-900">Staff</Link>
             <Link to="/client-login" className="hover:text-blue-600 transition-colors text-slate-900">Client</Link>
+            {user?.email === "princewill.iwuoha@gmail.com" && (
+              <Link to="/vacs-control-gate" className="text-rose-500 hover:text-rose-600 transition-colors">Admin Portal</Link>
+            )}
             <Link to="/register/client">
               <Button size="sm" className="rounded-full shadow-xl shadow-blue-500/10 h-10 px-6">Enroll Now</Button>
             </Link>
@@ -105,9 +114,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   </Link>
                 ))}
                 <div className="h-px bg-slate-100 w-full"></div>
-                <Link to="/superadmin" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-rose-500">Super Admin</Link>
                 <Link to="/staff-login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Staff Login</Link>
                 <Link to="/client-login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Client Login</Link>
+                {user?.email === "princewill.iwuoha@gmail.com" && (
+                  <Link to="/vacs-control-gate" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-rose-500">Super Admin Portal</Link>
+                )}
                 <Link to="/register/client" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full rounded-full h-12 shadow-md">Enroll Now</Button>
                 </Link>
@@ -152,7 +163,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <li><Link to="/register/rn" className="hover:text-white transition-colors">RN Application</Link></li>
               <li><Link to="/register/caregiver" className="hover:text-white transition-colors">Field Staff Registry</Link></li>
               <li><Link to="/plans" className="hover:text-white transition-colors">Care Packages</Link></li>
-              <li className="pt-2"><Link to="/superadmin" className="text-rose-500 hover:text-rose-400 transition-colors">Super Admin Portal</Link></li>
               <li><Link to="/staff-login" className="hover:text-white transition-colors">Staff Login</Link></li>
               <li><Link to="/client-login" className="hover:text-white transition-colors">Client Login</Link></li>
             </ul>

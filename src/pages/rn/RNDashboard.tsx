@@ -52,7 +52,7 @@ function RNOverview() {
                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Network Live</span>
               </div>
               <h3 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-[#C5A069]/30 decoration-8 underline-offset-12">Clinical Command Hub</h3>
-              <p className="text-slate-400 text-base max-w-md font-medium leading-relaxed">System-wide monitoring for Registered Nurses. Oversight of critical physiological telemetry and staff compliance.</p>
+              <p className="text-slate-400 text-base max-w-md font-medium leading-relaxed">System-wide monitoring for Registered Nurses. Oversight of critical physiological tracking and staff compliance.</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">

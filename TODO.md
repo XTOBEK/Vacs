@@ -17,20 +17,17 @@ This file is your project roadmap.
 ## Completed
 - [x] Basic App structure
 - [x] Authentication (Firebase)
-- [x] Super Admin Login Gate
+- [x] Consolidated Super Admin into Unified Admin Role (SSO)
+    - [x] Removed legacy local-storage based "Super Admin" gate
+    - [x] Integrated master control into main Admin Dashboard for user `princewill.iwuoha@gmail.com`
+    - [x] Restored "Super Admin" branding and high-level portal links for master account
 - [x] Admin Dashboard structure (Overview, CMS, Staff, Client, LMS, Inventory, Finance)
-- [x] Firestore security rules (initial draft)
-
-## In Progress
-- [x] Implement "Link Clinical Identity" workflow
-    - [x] Create UI for user to enter clinical details
-    - [x] Add logic to save clinical details to Firestore
-    - [x] Ensure security rules allow users to update their own clinical data
-- [ ] Full website diagnosis (links, buttons, navigation)
-- [ ] Refine Firestore security rules (Red Team Audit)
-
-## To Do
-- [ ] Fix broken button links in Admin Dashboard (e.g., Scheduling tab is empty)
-- [ ] Implement actual CMS functionality (edit user settings, global rates)
+- [x] Implemented "Link Clinical Identity" workflow
+- [x] Hardened Firestore security rules with handleFirestoreError
+    - [x] Fixed "Missing or insufficient permissions" for notifications collection
+- [ ] Connect Dynamic CMS modules (Landing, About, Services) - *In Progress*
+- [ ] Implement actual scheduling logistics node
+- [ ] Build out the "Internal Academy" (LMS) modules
+- [ ] Refine "Finances & Payments" with real gateway integration
 - [ ] UI/UX polishing for mobile responsiveness
-- [ ] Final production deployment configuration
+- [ ] Red Team Audit for Firestore Security Rules

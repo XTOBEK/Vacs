@@ -5,10 +5,9 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { auth, db } from "./lib/firebase";
+import { auth, db, handleFirestoreError, OperationType } from "./lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import SuperAdminLogin from "./pages/public/SuperAdminLogin";
 import LandingPage from "./pages/public/LandingPage";
 import LoginPage from "./pages/public/LoginPage";
 import RegistrationPage from "./pages/public/RegistrationPage";
@@ -17,6 +16,8 @@ import ServicesPage from "./pages/public/ServicesPage";
 import PricingPage from "./pages/public/PricingPage";
 import ContactPage from "./pages/public/ContactPage";
 import FAQPage from "./pages/public/FAQPage";
+import CareersPage from "./pages/public/Careers";
+import ApplicationForm from "./pages/public/ApplicationForm";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import RNDashboard from "./pages/rn/RNDashboard";
 import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
@@ -34,10 +35,19 @@ export default function App() {
         try {
           const userRef = doc(db, "users", firebaseUser.uid);
           const userDoc = await getDoc(userRef);
-          console.log("Logged in user:", firebaseUser.uid, "Firestore data:", userDoc.data());
+          
           if (userDoc.exists()) {
-            setUser({ ...firebaseUser, ...userDoc.data() });
+            const data = userDoc.data();
+            // Permanent fix: auto-promote to ADMIN if the email matches
+            if (firebaseUser.email === 'princewill.iwuoha@gmail.com' && data.role !== 'ADMIN') {
+              const { updateDoc } = await import("firebase/firestore");
+              await updateDoc(userRef, { role: 'ADMIN' });
+              setUser({ ...firebaseUser, ...data, role: 'ADMIN' });
+            } else {
+              setUser({ ...firebaseUser, ...data });
+            }
           } else if (firebaseUser.email === 'princewill.iwuoha@gmail.com') {
+            // First time login for admin - create basic profile or mock it
             setUser({ ...firebaseUser, role: 'ADMIN' });
           } else {
             // User exists in Auth but not in Firestore - might be registering
@@ -79,15 +89,16 @@ export default function App() {
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/plans" element={<PricingPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/careers" element={<CareersPage />} />
+        <Route path="/apply" element={<ApplicationForm />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/superadmin" element={<SuperAdminLogin />} />
         <Route path="/staff-login" element={<LoginPage allowedRole="RN" />} />
         <Route path="/client-login" element={<LoginPage allowedRole="CLIENT" />} />
         <Route path="/register/:role" element={<RegistrationPage />} />
         
         <Route 
           path="/vacs-control-gate/*" 
-          element={(user?.role === 'ADMIN' || localStorage.getItem('isSuperAuthenticated') === 'true') ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/vacs-control-gate/login" />} 
+          element={user?.role === 'ADMIN' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/vacs-control-gate/login" />} 
         />
         <Route 
           path="/rn/*" 

@@ -50,7 +50,9 @@ export default function AdminDashboard({ user, onLogout }: any) {
     { path: "/vacs-control-gate/staff", label: "Staff Management", icon: Users },
     { path: "/vacs-control-gate/clients", label: "Clients", icon: ShieldAlert },
     { path: "/vacs-control-gate/scheduling", label: "Scheduling", icon: Calendar },
-    { path: "/vacs-control-gate/finances", label: "Financial Control", icon: CreditCard },
+    { path: "/vacs-control-gate/finances", label: "Finances & Payments", icon: CreditCard },
+    { path: "/vacs-control-gate/franchise", label: "Franchise Mgmt", icon: Package },
+    { path: "/vacs-control-gate/invoicing", label: "Invoicing", icon: FileText },
     { path: "/vacs-control-gate/lms", label: "Internal Academy", icon: GraduationCap },
     { path: "/vacs-control-gate/inventory", label: "Assets & Kits", icon: Package },
     { path: "/vacs-control-gate/cms", label: "Dynamic CMS", icon: Edit },
@@ -73,6 +75,8 @@ export default function AdminDashboard({ user, onLogout }: any) {
         <Route path="clients" element={<ClientManager user={user} />} />
         <Route path="applicants" element={<ApplicantManager user={user} />} />
         <Route path="finances" element={<FinancialManager />} />
+        <Route path="franchise" element={<div className="p-12 text-center text-gray-400">Franchise Management Module</div>} />
+        <Route path="invoicing" element={<div className="p-12 text-center text-gray-400">Invoicing Module</div>} />
         <Route path="lms" element={<div className="p-12 text-center text-gray-400">Academy Under Construction</div>} />
         <Route path="inventory" element={<div className="p-12 text-center text-gray-400">Asset Management Under Construction</div>} />
         <Route path="scheduling" element={<div className="p-12 text-center text-gray-400">Shift Logistics Control</div>} />
@@ -104,13 +108,13 @@ const AdminOverview = ({ user }: any) => {
     unsubStaff = onSnapshot(collection(db, "users"), (snapshot) => {
       setStaff(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     }, (error) => {
-      console.warn("Firestore access restricted:", error.message);
+      handleFirestoreError(error, OperationType.LIST, "users");
     });
     unsubClients = onSnapshot(collection(db, "clients"), (snapshot) => {
       setClients(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }, (error) => {
-      console.warn("Firestore access restricted:", error.message);
+      handleFirestoreError(error, OperationType.LIST, "clients");
       setLoading(false);
     });
     return () => {
@@ -119,22 +123,20 @@ const AdminOverview = ({ user }: any) => {
     };
   }, [user]);
 
-  const totalRevenue = clients.length > 0 ? clients.length * 150000 : 250000000; 
    const pendingKitVerifications = staff.length > 0 ? staff.filter(s => s.kitStatus !== 'VERIFIED').length : 12;
  
 
    return (
      <div className="space-y-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-           <StatCard title="Node Liquidity" value={`₦${(totalRevenue/1000000).toFixed(1)}M`} trend="+12.4%" />
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            <StatCard title="Field Agents" value={staff.length > 0 ? staff.length : "480"} trend="Active" />
-           <StatCard title="Client Nodes" value={clients.length > 0 ? clients.length : "1,240"} trend="+5" />
+           <StatCard title="Total Registered Patients" value={clients.length} trend="Total" />
            <StatCard title="Critical Audits" value={pendingKitVerifications} trend="Priority" isCritical />
         </div>
 
         <div className="grid md:grid-cols-2 gap-10">
            <div className="bg-white p-10 rounded-[3rem] border border-slate-200">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Clinical Traffic Telemetry</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Clinical Traffic Overview</h4>
               <div className="h-64 flex items-end gap-3 px-4">
                  {[40, 70, 45, 90, 65, 80, 55, 95, 75, 85, 60, 100].map((h, i) => (
                     <div key={i} className="flex-1 bg-blue-600 rounded-t-lg transition-all hover:bg-[#C5A069]" style={{ height: `${h}%` }}></div>
@@ -530,7 +532,7 @@ function StaffManager({ user }: any) {
                 To maintain non-negotiable clinical integrity, all field staff are bound by the Three-Rule System. Protocol deviations trigger an automatic strike. 3 strikes result in permanent system lock.
              </p>
              <div className="grid md:grid-cols-3 gap-8">
-                <RuleInfo rule="Rule 1: Temporal Integrity" desc="DVP telemetry must be verified on-site. Delayed entries trigger an immediate audit flag." />
+                <RuleInfo rule="Rule 1: Temporal Integrity" desc="DVP tracking must be verified on-site. Delayed entries trigger an immediate audit flag." />
                 <RuleInfo rule="Rule 2: Identity Guard" desc="Terminal access is biologically strictly tied to the verified field professional ID." />
                 <RuleInfo rule="Rule 3: Clinical Shield" desc="Client private diagnostic data must never exceed the bounds of the encrypted registry." />
              </div>

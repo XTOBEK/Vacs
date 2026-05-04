@@ -15,7 +15,18 @@ All notable changes to this project will be documented in this file.
 - Created `CHANGELOG.md`.
 - Updated `README.md` with environment configuration guidelines.
 
+## [0.2.0] - 2026-05-04
+
+### Changed
+- **Unified Identity System:** Consolidated "Super Admin" and "Admin" roles into a single secure SSO flow.
+- **Role Promotion:** Added auto-promotion for master account to ensure constant administrative access.
+- **Security Hardening:** Implemented comprehensive `handleFirestoreError` tracking to diagnose permission issues in real-time.
+- **Firestore Rules:** Updated rules to allow master email access to own user profile regardless of relational mapping and added missing permissions for the `notifications` collection.
+- **Branding:** Updated Dashboard and Main layouts to dynamically reflect "Super Admin" status for the master user.
+
+### Removed
+- Legacy `/superadmin` route and local-storage based authentication to prevent "split-brain" session state.
+
 ### Current Status
-- The application is functional with a core admin/caregiver dashboard authenticated via Firebase. 
-- Mobile and tablet responsiveness is being actively optimized.
-- Production-ready build script enabled.
+- Master access is fully restored and integrated into the unified VACS Control Gate.
+- Next phase focuses on connecting the Dynamic CMS to live public pages.

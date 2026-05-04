@@ -140,6 +140,22 @@
         "lastUpdated": { "type": "string", "format": "date" }
       },
       "required": ["subject", "body"]
+    },
+    "CMSEntity": {
+      "title": "CMS Entry",
+      "description": "Dynamic content for branding or contact info.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "secondaryColor": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "emergency": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -174,7 +190,11 @@
     "/templates/{templateId}": {
       "schema": "EmailTemplate",
       "description": "System email templates"
-    }
+    },
+    "/cms/{contentId}": {
+      "schema": "CMSEntity",
+      "description": "Dynamic content and branding"
+    },
     "/applications/{applicationId}": {
       "schema": "Application",
       "description": "Applicant submissions"
