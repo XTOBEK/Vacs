@@ -30,8 +30,11 @@ import { ApplicantManager } from "./ApplicantManager";
 import RNSupervisorManager from "./RNSupervisorManager";
 import { TemplateEditor } from "../../components/admin/TemplateEditor";
 import { seedDatabase } from "../../lib/seed";
+import SchedulingManager from "./SchedulingManager";
+import LMSManager from "./LMSManager";
+import FinancialManager from "./FinancialManager";
 
-const ClinicalLoginRequired = ({ title, description, icon: Icon }: any) => (
+const StaffLoginRequired = ({ title, description, icon: Icon }: any) => (
   <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">
     <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300">
         <Icon size={32} />
@@ -43,7 +46,7 @@ const ClinicalLoginRequired = ({ title, description, icon: Icon }: any) => (
       </p>
     </div>
     <Link to="/vacs-control-gate/login">
-       <Button className="rounded-full bg-[#0B1D45] text-white border-none px-8 font-black uppercase tracking-widest text-[10px] h-12">Link Clinical Identity</Button>
+       <Button className="rounded-full bg-[#0B1D45] text-white border-none px-8 font-black uppercase tracking-widest text-[10px] h-12">Sign In as Staff</Button>
     </Link>
   </div>
 );
@@ -69,8 +72,8 @@ export default function AdminDashboard({ user, onLogout }: any) {
       {!auth.currentUser && (
         <div className="bg-amber-500 text-white p-3 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-4 animate-in fade-in slide-in-from-top duration-500">
            <ShieldAlert size={14} />
-           <span>Simulation Mode Active: Live Firestore node requires Clinical Identity Link</span>
-           <Link to="/vacs-control-gate/login" className="bg-white text-amber-600 px-4 py-1 rounded-full hover:bg-white/90 transition-colors">Link Clinical ID</Link>
+           <span>Working in Offline Mode: Please sign in to access live staff records.</span>
+           <Link to="/vacs-control-gate/login" className="bg-white text-amber-600 px-4 py-1 rounded-full hover:bg-white/90 transition-colors">Sign In Now</Link>
         </div>
       )}
       <Routes>
@@ -84,9 +87,9 @@ export default function AdminDashboard({ user, onLogout }: any) {
         <Route path="finances" element={<FinancialManager />} />
         <Route path="franchise" element={<div className="p-12 text-center text-gray-400">Franchise Management Module</div>} />
         <Route path="invoicing" element={<div className="p-12 text-center text-gray-400">Invoicing Module</div>} />
-        <Route path="lms" element={<div className="p-12 text-center text-gray-400">Academy Under Construction</div>} />
+        <Route path="lms" element={<LMSManager />} />
         <Route path="inventory" element={<div className="p-12 text-center text-gray-400">Asset Management Under Construction</div>} />
-        <Route path="scheduling" element={<div className="p-12 text-center text-gray-400">Shift Logistics Control</div>} />
+        <Route path="scheduling" element={<SchedulingManager />} />
         <Route path="*" element={<div className="p-12 text-center text-gray-400">Section Under Construction</div>} />
       </Routes>
     </DashboardLayout>
@@ -100,7 +103,7 @@ const AdminOverview = ({ user }: any) => {
   const [loading, setLoading] = useState(true);
 
   if (!user) {
-    return <ClinicalLoginRequired title="Overview Node Locked" description="An active clinical session is mandatory to access institutional metrics." icon={ShieldAlert} />;
+    return <StaffLoginRequired title="Overview Access Locked" description="Please sign in to view the latest care summary and family updates." icon={ShieldAlert} />;
   }
 
   useEffect(() => {
@@ -147,14 +150,14 @@ const AdminOverview = ({ user }: any) => {
    return (
      <div className="space-y-12">
          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <StatCard title="Field Agents" value={staff.length > 0 ? staff.length : "480"} trend="Active" />
-           <StatCard title="Total Registered Patients" value={clients.length} trend="Total" />
-           <StatCard title="Critical Audits" value={pendingKitVerifications} trend="Priority" isCritical />
+           <StatCard title="Total Caregivers" value={staff.length > 0 ? staff.length : "480"} trend="Active" />
+           <StatCard title="Registered Clients" value={clients.length} trend="Total" />
+           <StatCard title="Pending Reviews" value={pendingKitVerifications} trend="Priority" isCritical />
         </div>
 
         <div className="grid md:grid-cols-2 gap-10">
            <div className="bg-white p-10 rounded-[3rem] border border-slate-200">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Clinical Traffic Overview</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Care Activity Summary</h4>
               <div className="h-64 flex items-end gap-3 px-4">
                  {[40, 70, 45, 90, 65, 80, 55, 95, 75, 85, 60, 100].map((h, i) => (
                     <div key={i} className="flex-1 bg-blue-600 rounded-t-lg transition-all hover:bg-[#C5A069]" style={{ height: `${h}%` }}></div>
@@ -167,10 +170,10 @@ const AdminOverview = ({ user }: any) => {
            </div>
            <div className="bg-[#0B1D45] p-10 rounded-[3rem] text-white">
               <div className="flex items-center justify-between mb-8">
-                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Incident Map</h4>
+                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Live Care Updates</h4>
                  <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-red-400">Live Feedback</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-red-400">Recent Notifications</span>
                  </div>
               </div>
               <div className="space-y-6">
@@ -188,9 +191,9 @@ const AdminOverview = ({ user }: any) => {
                    ))
                  ) : (
                    [
-                     { user: "RN Adeoye", msg: "DVP entry mismatch at Node #492", time: "2m ago" },
-                     { user: "Agency Hub", msg: "Billing cycle 04 initialized", time: "15m ago" },
-                     { user: "System", msg: "LMS certificates issued (12)", time: "45m ago" }
+                     { user: "RN Adeoye", msg: "Record update needed for Unit #492", time: "2m ago" },
+                     { user: "Agency Hub", msg: "Monthly payment cycle started", time: "15m ago" },
+                     { user: "System", msg: "New training certificates issued (12)", time: "45m ago" }
                    ].map((log, i) => (
                       <div key={i} className="flex gap-4 items-start p-4 hover:bg-white/5 rounded-2xl transition-colors">
                          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-black uppercase tracking-tighter italic shrink-0">{log.user[0]}</div>
@@ -210,7 +213,7 @@ const AdminOverview = ({ user }: any) => {
 
 function CMSManager({ user }: any) {
   if (!user) {
-    return <ClinicalLoginRequired title="CMS Node Locked" description="Direct registry modification requires an active clinical session for cryptographic signing." icon={Edit} />;
+    return <StaffLoginRequired title="CMS Section Locked" description="Please sign in as an authorized user to update website content." icon={Edit} />;
   }
   
   const [activeSegment, setActiveSegment] = React.useState('branding');
@@ -258,13 +261,13 @@ function CMSManager({ user }: any) {
       <div className="bg-[#0B1D45] border border-white/10 text-white p-10 rounded-[3rem] relative overflow-hidden shadow-2xl">
          <div className="relative z-10">
             <div className="flex items-center gap-3 mb-6">
-               <span className="px-3 py-1 bg-[#C5A069] text-[#0B1D45] text-[10px] font-black rounded-lg uppercase tracking-[0.2em] shadow-lg shadow-[#C5A069]/20 text-[#0B1D45]">VACS Core Engine</span>
+               <span className="px-3 py-1 bg-[#C5A069] text-[#0B1D45] text-[10px] font-black rounded-lg uppercase tracking-[0.2em] shadow-lg shadow-[#C5A069]/20 text-[#0B1D45]">VACS Website Manager</span>
                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-               <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Protocol Live Sync</span>
+               <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Live Updates Active</span>
             </div>
-            <h3 className="text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-[#C5A069]/50 decoration-8 underline-offset-8">Dynamic CMS Guide</h3>
+            <h3 className="text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-[#C5A069]/50 decoration-8 underline-offset-8">Website Control Panel</h3>
             <p className="text-slate-400 text-lg max-w-lg font-medium leading-relaxed">
-               Manage real-time clinical copy, field staff imagery, and protocol documentation across all public nodes.
+               Manage care information, caregiver stories, and help guides for Nigerian families.
             </p>
          </div>
          <LayoutDashboard className="absolute top-1/2 right-12 -translate-y-1/2 w-48 h-48 text-white/5 -z-0 rotate-12" />
@@ -273,32 +276,32 @@ function CMSManager({ user }: any) {
       <div className="flex flex-col lg:flex-row gap-10">
          {/* CMS Navigation */}
          <div className="w-full lg:w-72 shrink-0 space-y-4">
-            <CMSNavItem active={activeSegment === 'branding'} onClick={() => setActiveSegment('branding')} label="Brand Identity" />
-            <CMSNavItem active={activeSegment === 'landing'} onClick={() => setActiveSegment('landing')} label="Landing Hero" />
-            <CMSNavItem active={activeSegment === 'about'} onClick={() => setActiveSegment('about')} label="About VACS" />
-            <CMSNavItem active={activeSegment === 'services'} onClick={() => setActiveSegment('services')} label="Service Tiers" />
-            <CMSNavItem active={activeSegment === 'faq'} onClick={() => setActiveSegment('faq')} label="Clinical FAQ" />
-            <CMSNavItem active={activeSegment === 'contact'} onClick={() => setActiveSegment('contact')} label="Contact Node" />
-            <CMSNavItem active={activeSegment === 'templates'} onClick={() => setActiveSegment('templates')} label="Email Templates" />
-            <CMSNavItem active={activeSegment === 'images'} onClick={() => setActiveSegment('images')} label="Asset Registry" />
+            <CMSNavItem active={activeSegment === 'branding'} onClick={() => setActiveSegment('branding')} label="Agency Brand" />
+            <CMSNavItem active={activeSegment === 'landing'} onClick={() => setActiveSegment('landing')} label="Main Banner" />
+            <CMSNavItem active={activeSegment === 'about'} onClick={() => setActiveSegment('about')} label="About Visiting Angels" />
+            <CMSNavItem active={activeSegment === 'services'} onClick={() => setActiveSegment('services')} label="Care Services" />
+            <CMSNavItem active={activeSegment === 'faq'} onClick={() => setActiveSegment('faq')} label="Frequently Asked Questions" />
+            <CMSNavItem active={activeSegment === 'contact'} onClick={() => setActiveSegment('contact')} label="Contact Information" />
+            <CMSNavItem active={activeSegment === 'templates'} onClick={() => setActiveSegment('templates')} label="Communication Templates" />
+            <CMSNavItem active={activeSegment === 'images'} onClick={() => setActiveSegment('images')} label="Photo Gallery" />
          </div>
 
          {/* Editor Panes */}
          <div className="flex-1 bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm min-h-[600px] relative">
             {activeSegment === 'branding' && (
-              <div className="space-y-12 h-full flex flex-col">
+               <div className="space-y-12 h-full flex flex-col">
                  <div className="grid md:grid-cols-2 gap-10">
                     <div className="space-y-8">
-                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Identity Configuration</h4>
-                       <CMSField label="Legal Entity Name" defaultValue={cmsData.branding?.name || "Visiting Angels Caregivers Solutions"} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, name: val }} />
-                       <CMSField label="Market Tagline" defaultValue={cmsData.branding?.tagline || "Safe. Dignified. Accountable."} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, tagline: val }} />
+                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Identity Settings</h4>
+                       <CMSField label="Agency Name" defaultValue={cmsData.branding?.name || "Visiting Angels Caregivers Solutions"} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, name: val }} />
+                       <CMSField label="Our Care Promise" defaultValue={cmsData.branding?.tagline || "Safe. Dignified. Accountable."} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, tagline: val }} />
                        <div className="grid grid-cols-2 gap-4">
-                          <CMSField label="Primary Brand HEX" defaultValue={cmsData.branding?.primaryColor || "#2563eb"} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, primaryColor: val }} />
-                          <CMSField label="Secondary Brand HEX" defaultValue={cmsData.branding?.secondaryColor || "#0f172a"} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, secondaryColor: val }} />
+                          <CMSField label="Primary Color (HEX)" defaultValue={cmsData.branding?.primaryColor || "#2563eb"} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, primaryColor: val }} />
+                          <CMSField label="Secondary Color (HEX)" defaultValue={cmsData.branding?.secondaryColor || "#0f172a"} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, secondaryColor: val }} />
                        </div>
                     </div>
                     <div className="space-y-6">
-                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Logo Architecture</h4>
+                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Agency Logo</h4>
                        <div className="p-8 border-2 border-dashed border-slate-100 bg-slate-50 rounded-[2rem] text-center group cursor-pointer hover:border-blue-500 transition-all">
                           <div className="flex items-center justify-center gap-2 mb-6">
                              {cmsData.branding?.logoUrl ? (
@@ -310,13 +313,13 @@ function CMSManager({ user }: any) {
                                </>
                              )}
                           </div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Active Site Logo (URL/SVG)</p>
-                          <CMSField label="Logo URL" defaultValue={cmsData.branding?.logoUrl || ""} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, logoUrl: val }} />
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Current Logo (Link)</p>
+                          <CMSField label="Logo Link" defaultValue={cmsData.branding?.logoUrl || ""} onChange={(val: string) => cmsData.branding = { ...cmsData.branding, logoUrl: val }} />
                        </div>
                        <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
-                          <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-2">Clinical Note</p>
+                          <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-2">Note for Staff</p>
                           <p className="text-xs text-blue-800/80 font-medium leading-relaxed">
-                             Updating the logo affects the Main Navigation, Footer, and all clinical PDFs generated for clients.
+                             Updating the logo changes it on the website and all care reports generated for families.
                           </p>
                        </div>
                     </div>
@@ -327,7 +330,7 @@ function CMSManager({ user }: any) {
                       onClick={() => handleSave('branding', cmsData.branding)}
                       className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none shadow-2xl shadow-blue-500/20"
                     >
-                      {isSaving ? "Syncing..." : "Sync Brand System"}
+                       {isSaving ? "Saving..." : "Save Brand Settings"}
                     </Button>
                  </div>
               </div>
@@ -336,10 +339,10 @@ function CMSManager({ user }: any) {
             {activeSegment === 'contact' && (
               <div className="space-y-12">
                  <div className="grid md:grid-cols-2 gap-10">
-                    <CMSField label="Command Center Phone" defaultValue={cmsData.contact?.phone || "+234 800 VACS CARE"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, phone: val }} />
-                    <CMSField label="Clinical Email" defaultValue={cmsData.contact?.email || "ops@vacscare.com"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, email: val }} />
-                    <CMSField label="HQ Address" defaultValue={cmsData.contact?.address || "Lagos Mainland East, Lagos State"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, address: val }} />
-                    <CMSField label="Emergency Protocol Line" defaultValue={cmsData.contact?.emergency || "+234 900 EMERGENCY"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, emergency: val }} />
+                    <CMSField label="Primary Phone" defaultValue={cmsData.contact?.phone || "+234 800 VACS CARE"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, phone: val }} />
+                    <CMSField label="Support Email" defaultValue={cmsData.contact?.email || "ops@vacscare.com"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, email: val }} />
+                    <CMSField label="Office Address" defaultValue={cmsData.contact?.address || "Lagos Mainland East, Lagos State"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, address: val }} />
+                    <CMSField label="24/7 Support Line" defaultValue={cmsData.contact?.emergency || "+234 900 EMERGENCY"} onChange={(val: string) => cmsData.contact = { ...cmsData.contact, emergency: val }} />
                  </div>
                  <div className="flex justify-end pt-10 border-t border-slate-100">
                     <Button 
@@ -347,7 +350,7 @@ function CMSManager({ user }: any) {
                       onClick={() => handleSave('contact', cmsData.contact)}
                       className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none"
                     >
-                      {isSaving ? "Updating..." : "Update Contact Registry"}
+                      {isSaving ? "Saving..." : "Save Contact Info"}
                     </Button>
                  </div>
               </div>
@@ -411,7 +414,7 @@ function StaffManager({ user }: any) {
   const [loading, setLoading] = useState(true);
 
   if (!user) {
-    return <ClinicalLoginRequired title="Staff Registry Locked" description="Privacy regulations require an authenticated clinical session to view field staff identities." icon={Users} />;
+    return <StaffLoginRequired title="Staff List Locked" description="Please sign in to view and manage your caregivers." icon={Users} />;
   }
 
   useEffect(() => {
@@ -436,28 +439,28 @@ function StaffManager({ user }: any) {
   }, [user]);
 
   const handleAddStaff = async () => {
-      const email = prompt("Enter agent email:");
+      const email = prompt("Enter caregiver email:");
       if (!email) return;
       try {
           await addDoc(collection(db, "users"), {
               email: email,
-              fullName: "New Field Agent",
+              fullName: "New Caregiver",
               role: "Field Agent",
               verificationStatus: "PENDING",
               kitStatus: "MISSING",
               createdAt: new Date()
           });
-          alert("Field Agent record initialized.");
+          alert("Caregiver record created successfully.");
       } catch (error) {
           handleFirestoreError(error, OperationType.CREATE, "users");
       }
   };
 
   const handleDeactivateStaff = async (staffId: string) => {
-      if (!confirm("Are you sure you want to deactivate this agent?")) return;
+      if (!confirm("Are you sure you want to deactivate this caregiver?")) return;
       try {
           await updateDoc(doc(db, "users", staffId), { verificationStatus: "BLOCKED" });
-          alert("Field Agent deactivated.");
+          alert("Caregiver deactivated.");
       } catch (error) {
           handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
       }
@@ -520,21 +523,21 @@ function StaffManager({ user }: any) {
             Note: Staff data hidden for privacy security. Link Clinical ID to unlock repository.
          </div>
        )}
-       <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-black text-slate-900 italic uppercase italic tracking-tighter">Field Staff Protocol Registry</h3>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Verification of Clinical Integrity & Reprimand Ledger</p>
+            <h3 className="text-xl font-black text-slate-900 italic uppercase italic tracking-tighter">Caregiver Directory</h3>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Verification and Performance Records</p>
           </div>
           <div className="flex items-center gap-3">
              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
                   type="text" 
-                  placeholder="Scan Protocol ID..."
+                  placeholder="Search caregiver name or ID..."
                   className="pl-10 pr-4 h-10 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase tracking-widest w-64 focus:ring-2 focus:ring-[#C5A069] outline-none transition-all"
                 />
              </div>
-             <Button onClick={handleAddStaff} className="h-10 text-xs font-black uppercase tracking-widest rounded-full shadow-lg shadow-[#C5A069]/10 bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158] border-none">Register Field Agent</Button>
+             <Button onClick={handleAddStaff} className="h-10 text-xs font-black uppercase tracking-widest rounded-full shadow-lg shadow-[#C5A069]/10 bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158] border-none">Register New Caregiver</Button>
           </div>
        </div>
 
@@ -542,12 +545,12 @@ function StaffManager({ user }: any) {
           <table className="w-full text-left border-collapse">
              <thead className="bg-slate-50 border-b border-slate-100 uppercase text-[10px] font-black tracking-widest text-slate-400">
                 <tr>
-                   <th className="px-2 py-4 md:px-6 md:py-5">Field Agent</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5">Name</th>
                    <th className="px-2 py-4 md:px-6 md:py-5 hidden sm:table-cell">Role</th>
-                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Verification</th>
-                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Kit</th>
-                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Supervisor</th>
-                   <th className="px-2 py-4 md:px-6 md:py-5 text-right">Operations</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Status</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Kit Check</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 hidden md:table-cell">Supervised By</th>
+                   <th className="px-2 py-4 md:px-6 md:py-5 text-right">Actions</th>
                 </tr>
              </thead>
              <tbody className="divide-y divide-slate-100">
@@ -559,7 +562,7 @@ function StaffManager({ user }: any) {
                   ))
                 ) : staff.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 opacity-50 italic">No Field Agents Registered in Node</td>
+                    <td colSpan={5} className="px-6 py-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 opacity-50 italic">No caregivers registered yet.</td>
                   </tr>
                 ) : (
                   staff.map((agent) => (
@@ -577,22 +580,22 @@ function StaffManager({ user }: any) {
           </table>
        </div>
 
-       {/* System-Wide Compliance Oversight */}
+       {/* Care Quality Monitoring */}
        <div className="mt-12 bg-white border border-slate-200 rounded-[3rem] overflow-hidden shadow-2xl relative">
           <div className="p-10 border-b border-slate-100 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
              <div className="flex items-center gap-6">
                 <div className="w-14 h-14 bg-[#C5A069] rounded-2xl flex items-center justify-center text-[#0B1D45] shadow-xl">
-                   <ShieldAlert size={28} />
+                    <ShieldAlert size={28} />
                 </div>
                 <div>
-                   <h3 className="text-2xl font-black tracking-tighter uppercase italic">System-Wide Compliance Oversight</h3>
-                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Live Protocol Ledger • Directive #2026-X</p>
+                   <h3 className="text-2xl font-black tracking-tighter uppercase italic">Care Quality Monitoring</h3>
+                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Live Updates on Services Provided</p>
                 </div>
              </div>
              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Node Status:</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">System Status:</span>
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Active Monitoring</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Monitoring Active</span>
              </div>
           </div>
           
@@ -600,10 +603,10 @@ function StaffManager({ user }: any) {
              <table className="w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                    <tr>
-                      <th className="px-10 py-6">Field Professional</th>
-                      <th className="px-10 py-6 text-center">Current Strikes</th>
-                      <th className="px-10 py-6">Clinical Status</th>
-                      <th className="px-10 py-6 text-right">Oversight Operations</th>
+                      <th className="px-10 py-6">Caregiver</th>
+                      <th className="px-10 py-6 text-center">Caution Flags</th>
+                      <th className="px-10 py-6">Status</th>
+                      <th className="px-10 py-6 text-right">Actions</th>
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -617,7 +620,7 @@ function StaffManager({ user }: any) {
                                <div>
                                   <p className="text-base font-black text-slate-900 tracking-tight uppercase italic">{agent.fullName || agent.full_name}</p>
                                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{agent.role}</p>
-                               </div>
+                                </div>
                             </div>
                          </td>
                          <td className="px-10 py-8 text-center">
@@ -628,7 +631,7 @@ function StaffManager({ user }: any) {
                                      i <= (agent.compliance_strikes || 0) ? "bg-rose-500 shadow-lg shadow-rose-500/20" : "bg-slate-200"
                                   )}></div>
                                ))}
-                               <span className="text-xs font-black text-slate-900 ml-2">{agent.compliance_strikes || 0} / 3</span>
+                               <span className="text-xs font-black text-slate-900 ml-2">{agent.compliance_strikes || 0} / 3 Flags</span>
                             </div>
                          </td>
                          <td className="px-10 py-8">
@@ -636,19 +639,19 @@ function StaffManager({ user }: any) {
                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
                                agent.status === 'locked_pending_review' ? "bg-rose-50 border-rose-200 text-rose-600 animate-pulse" : "bg-blue-50 border-blue-200 text-blue-600"
                             )}>
-                               {agent.status || "NOMINAL"}
+                               {agent.status === 'locked_pending_review' ? "Review Needed" : "Active"}
                             </span>
                          </td>
                          <td className="px-10 py-8 text-right">
                             <div className="flex items-center justify-end gap-3">
                                <Button onClick={() => handleAdjustStrikes(agent.id, agent.compliance_strikes || 0, 1)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-rose-200 text-rose-600 hover:bg-rose-50 gap-2">
-                                  <Plus size={14} /> Add
+                                  Flag Issue
                                </Button>
                                <Button onClick={() => handleAdjustStrikes(agent.id, agent.compliance_strikes || 0, -1)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
-                                  <Minus size={14} /> Remove
+                                  Clear Flag
                                </Button>
                                <Button onClick={() => handleTerminateUser(agent.id)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest bg-rose-600 text-white border-none hover:bg-rose-700 gap-2">
-                                  <Lock size={14} /> Terminal
+                                  Lock Account
                                </Button>
                             </div>
                          </td>
@@ -658,7 +661,7 @@ function StaffManager({ user }: any) {
                       <tr>
                          <td colSpan={4} className="px-10 py-20 text-center">
                             <ShieldCheck size={48} className="mx-auto text-slate-100 mb-4" />
-                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">No clinical protocol deviations detected across network.</p>
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">All caregivers are following our standard care practices.</p>
                          </td>
                       </tr>
                    )}
@@ -779,123 +782,6 @@ function AssetCard({ title, items, assignedTo, managedBy, visibility, status, is
   );
 }
 
-function FinancialManager() {
-  const [activeTab, setActiveTab] = React.useState("billing");
-
-  return (
-    <div className="space-y-8">
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 bg-slate-950 text-white rounded-[2rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
-             <div className="relative z-10">
-                <p className="text-[10px] uppercase font-black tracking-[0.4em] text-slate-500 mb-4">Operational Liquidity</p>
-                <h4 className="text-4xl font-black font-mono tracking-tighter mb-6">₦124,560,800</h4>
-                <div className="flex gap-2">
-                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                   <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Vault Secure</span>
-                </div>
-             </div>
-             <CreditCard size={120} className="absolute -bottom-8 -right-8 text-white/5 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="p-8 bg-white border border-slate-200 rounded-[2rem] shadow-sm relative overflow-hidden group">
-             <p className="text-[10px] uppercase font-black tracking-[0.4em] text-slate-400 mb-4">Staff Wallet Liability</p>
-             <h4 className="text-4xl font-black text-slate-900 font-mono tracking-tighter mb-6">₦12,400,000</h4>
-             <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 bg-amber-50 px-2 py-1 rounded">Pending Disbursement</span>
-          </div>
-          <div className="p-8 bg-blue-600 text-white rounded-[2rem] shadow-2xl shadow-blue-500/20 relative overflow-hidden">
-             <p className="text-[10px] uppercase font-black tracking-[0.4em] text-blue-200 mb-4">Clinical Margin (Q2)</p>
-             <h4 className="text-4xl font-black font-mono tracking-tighter mb-6">24.5%</h4>
-             <div className="h-1 w-full bg-blue-400/30 rounded-full overflow-hidden">
-                <div className="h-full bg-white w-3/4"></div>
-             </div>
-          </div>
-       </div>
-
-       <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex border-b border-slate-100 bg-slate-50/50">
-             <button 
-               onClick={() => setActiveTab("billing")}
-               className={cn(
-                  "px-10 py-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative",
-                  activeTab === "billing" ? "text-blue-600 bg-white" : "text-slate-400 hover:text-slate-600"
-               )}
-             >
-                Billing Center
-                {activeTab === "billing" && <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-600"></div>}
-             </button>
-             <button 
-               onClick={() => setActiveTab("rates")}
-               className={cn(
-                  "px-10 py-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative",
-                  activeTab === "rates" ? "text-blue-600 bg-white" : "text-slate-400 hover:text-slate-600"
-               )}
-             >
-                Rate Matrix
-                {activeTab === "rates" && <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-600"></div>}
-             </button>
-          </div>
-
-          <div className="p-10">
-             {activeTab === "billing" ? (
-                <div className="space-y-10">
-                   <div className="flex items-center justify-between">
-                      <div>
-                         <h4 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase">Revenue Generation Module</h4>
-                         <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Convert verified clinical logs into billable invoices</p>
-                      </div>
-                      <Button className="rounded-full px-8">Batch Generate All</Button>
-                   </div>
-
-                   <div className="grid gap-4">
-                      {[1, 2, 3].map(i => (
-                         <div key={i} className="group p-6 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white hover:border-blue-500 hover:shadow-xl transition-all">
-                            <div className="flex items-center gap-6">
-                               <div className="w-14 h-14 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                  <FileText size={28} />
-                               </div>
-                               <div>
-                                  <p className="text-lg font-black text-slate-900 tracking-tight italic">Client #VAC-923{i} • Weekly Engagement</p>
-                                  <div className="flex items-center gap-3 mt-1">
-                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none border-r border-slate-300 pr-3">Verified: Mar 10</span>
-                                     <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none italic">RN Approved: Log #882</span>
-                                  </div>
-                               </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                               <div className="text-right">
-                                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Billable Value</p>
-                                  <p className="text-xl font-black text-slate-900 tracking-tighter">₦84,000</p>
-                               </div>
-                               <Button variant="outline" className="h-12 px-6 rounded-xl border-slate-200 text-[10px] uppercase font-black tracking-widest group-hover:border-blue-500 group-hover:text-blue-600">Draft Invoice</Button>
-                            </div>
-                         </div>
-                      ))}
-                   </div>
-                </div>
-             ) : (
-                <div className="space-y-8">
-                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <RateCard tier="Tier 1 (Standard)" rate="1,600/hr" description="Companionship & light housekeeping" />
-                      <RateCard tier="Tier 2 (Physical)" rate="1,900/hr" description="Mobility assistance & hygiene" />
-                      <RateCard tier="Tier 3 (Cognitive)" rate="2,200/hr" description="Amnesia/Dementia support (SCAs ONLY)" />
-                      <RateCard tier="Tier 4 (Palliative)" rate="2,500/hr" description="RN-led end-of-life care" />
-                   </div>
-                   <div className="p-8 bg-amber-50 border border-amber-100 rounded-[2rem]">
-                      <div className="flex gap-4">
-                         <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0"><ShieldAlert size={20} /></div>
-                         <div>
-                            <h5 className="font-black text-slate-900 uppercase tracking-widest text-sm mb-2">Rate Lock Disclaimer</h5>
-                            <p className="text-xs text-slate-600 leading-relaxed font-medium">Changes to core clinical rates affect all active contracts instantly. Use caution when modifying protocol pricing. Audit required for all adjustments.</p>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-             )}
-          </div>
-       </div>
-    </div>
-  );
-}
-
 function StatCard({ title, value, trend, color, isCritical }: any) {
   return (
     <div className={cn(
@@ -942,16 +828,6 @@ function CMSField({ label, defaultValue, type = "text", onChange }: any) {
   );
 }
 
-function RateCard({ tier, rate, description }: any) {
-  return (
-    <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl text-center group hover:bg-white hover:shadow-md transition-all">
-       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{tier}</p>
-       <p className="text-2xl font-black text-slate-900 tracking-tighter">₦{rate}</p>
-       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1 opacity-60">{description}</p>
-    </div>
-  );
-}
-
 function ClientManager({ user }: any) {
   const [activeTab, setActiveTab] = React.useState("registry");
   const [clients, setClients] = useState<any[]>([]);
@@ -959,7 +835,7 @@ function ClientManager({ user }: any) {
   const [loading, setLoading] = useState(true);
 
   if (!user) {
-    return <ClinicalLoginRequired title="Client Registry Shielded" description="Institutional privacy protocols: An active clinical session is mandatory to access client diagnostic logs." icon={ShieldAlert} />;
+    return <StaffLoginRequired title="Client Records Locked" description="Privacy Protection: Please sign in to your staff account to view client records." icon={ShieldAlert} />;
   }
 
   useEffect(() => {
@@ -1177,7 +1053,7 @@ function ClientManager({ user }: any) {
 
 function AcademyManager({ user }: any) {
   if (!user) {
-    return <ClinicalLoginRequired title="Academy Node Offline" description="Certification tracking and clinical training modules require a verified professional node." icon={GraduationCap} />;
+    return <StaffLoginRequired title="Academy Locked" description="Academy Access Restricted: Training records are only available to signed-in staff members." icon={GraduationCap} />;
   }
   return (
     <div className="space-y-12">
@@ -1261,7 +1137,7 @@ function AcademyManager({ user }: any) {
 
 function InventoryManager({ user }: any) {
   if (!user) {
-    return <ClinicalLoginRequired title="Inventory Node Masked" description="Medical equipment ledger and field kit audits require a synchronized clinical session." icon={Package} />;
+    return <StaffLoginRequired title="Inventory Locked" description="Inventory Access Locked: Please sign in to manage equipment and caregiver care kits." icon={Package} />;
   }
   return (
     <div className="space-y-12">

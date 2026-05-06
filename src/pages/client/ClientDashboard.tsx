@@ -39,7 +39,7 @@ import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 
 function ClientSupport() {
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'VACS Command Center online. How can I assist with your clinical protocol?' }
+    { role: 'ai', text: 'VACS Help Desk is online. How can we help you today?' }
   ]);
   const [input, setInput] = useState('');
 
@@ -48,9 +48,9 @@ function ClientSupport() {
     const userMsg = { role: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
     
-    let responseText = "Acknowledged. Routing query to Supervising RN.";
+    let responseText = "Thank you. We are sharing your question with our lead nurse.";
     if (input.toLowerCase().includes('pay') && input.toLowerCase().includes('caregiver')) {
-      responseText = "All payments must go through the VACS platform to ensure your insurance coverage and clinical RN oversight remain valid. Private hiring is a breach of the Service Agreement.";
+      responseText = "For your safety and guaranteed care quality, all payments must be made through our official VACS platform. Private arrangements are not permitted and void our care promise.";
     }
 
     setTimeout(() => {
@@ -68,13 +68,13 @@ function ClientSupport() {
                    <ShieldCheck size={20} />
                 </div>
                 <div>
-                   <h3 className="text-lg font-black italic uppercase tracking-tight">Clinical Assistant</h3>
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Protocol & Policy Guidance</p>
+                   <h3 className="text-lg font-black italic uppercase tracking-tight">Care Assistant</h3>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Help & Support</p>
                 </div>
              </div>
              <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Secure Node</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Secure Support</span>
              </div>
           </div>
 
@@ -94,7 +94,7 @@ function ClientSupport() {
                value={input}
                onChange={(e) => setInput(e.target.value)}
                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-               placeholder="Enter protocol query..."
+               placeholder="Type your question here..."
                className="flex-1 bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none focus:border-blue-500 transition-all"
              />
              <Button onClick={handleSend} className="h-14 w-14 rounded-2xl flex items-center justify-center p-0">
@@ -103,9 +103,9 @@ function ClientSupport() {
           </div>
        </div>
        <div className="p-8 bg-amber-50 border border-amber-100 rounded-3xl text-center">
-          <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Global Policy Note</p>
+          <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Our Care Promise</p>
           <p className="text-xs text-amber-600/80 font-medium mt-2 leading-relaxed italic">
-            "VACS maintains a Zero-Tolerance policy regarding private financial arrangements with staff. Any such arrangement voids clinical oversight and triggers legal penalties."
+            "We are committed to professional care. Please make all payments through VACS to ensure your loved one receives the highest standard of supervised care."
           </p>
        </div>
     </div>
@@ -160,8 +160,8 @@ function ClientCareLogs() {
    return (
       <div className="space-y-10">
          <div className="flex flex-col gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Clinical Evidence Logs</h3>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Verifiable historical care records for this case</p>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Care Visit Records</h3>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Review past care visits and updates for your loved one.</p>
          </div>
          <div className="grid gap-6">
             {[1, 2, 3, 4, 5].map(i => (
@@ -172,8 +172,8 @@ function ClientCareLogs() {
                         <History size={28} />
                      </div>
                      <div>
-                        <p className="font-black text-slate-900 text-lg tracking-tight">Daily Clinical Log — March {12 - i}, 2026</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Certified By Field Staff: Emma Wilson • Verified by VACS Audit</p>
+                        <p className="font-black text-slate-900 text-lg tracking-tight">Daily Care Report — March {12 - i}, 2026</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Written by Caregiver: Emma Wilson • Reviewed by VACS Team</p>
                      </div>
                   </div>
                   <Button variant="ghost" className="h-12 px-6 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 hover:border-slate-200 transition-all gap-2">
@@ -236,8 +236,8 @@ function ClientBilling({ wallet }: { wallet: any }) {
                   >
                      <div className="flex items-center justify-between mb-8">
                         <div>
-                           <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Deposit Node</h3>
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Registry Credit Acquisition</p>
+                           <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Add Funds</h3>
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Add Money to Your Wallet</p>
                         </div>
                         <button onClick={() => setShowTopUp(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900">
                            <X size={18} />
@@ -271,7 +271,7 @@ function ClientBilling({ wallet }: { wallet: any }) {
                         <div className="p-4 bg-blue-50/50 rounded-2xl border border-dashed border-blue-200 flex items-center gap-4">
                            <ShieldCheck size={20} className="text-blue-600 shrink-0" />
                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-loose">
-                              Secure Node Protocol: Encrypted through Flutterwave/Paystack Gateway.
+                              Your payment is safe and protected by Paystack or Flutterwave.
                            </p>
                         </div>
 
@@ -280,7 +280,7 @@ function ClientBilling({ wallet }: { wallet: any }) {
                            onClick={handleTopUp}
                            className="w-full h-16 rounded-[1.5rem] bg-slate-900 border-none text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/10"
                         >
-                           {loading ? "Initializing Transaction..." : "Proceed to Secure Engine"}
+                           {loading ? "Processing payment..." : "Proceed to Secure Payment"}
                         </Button>
                      </div>
                   </motion.div>
@@ -292,8 +292,8 @@ function ClientBilling({ wallet }: { wallet: any }) {
             <div className="bg-slate-950 text-white p-10 rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden border border-slate-800 transition-transform hover:scale-[1.01] duration-500">
                <div className="relative z-10">
                   <div className="flex items-center justify-between mb-2">
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Available Credit</p>
-                     <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest bg-[#C5A069]/10 px-3 py-1 rounded-full border border-[#C5A069]/20">Active Node</p>
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Your Balance</p>
+                     <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest bg-[#C5A069]/10 px-3 py-1 rounded-full border border-[#C5A069]/20">Wallet Active</p>
                   </div>
                   <h4 className="text-6xl font-black tracking-tighter mb-10 tabular-nums">₦{balance.toLocaleString()}</h4>
                   <div className="flex flex-wrap gap-4">
@@ -301,7 +301,7 @@ function ClientBilling({ wallet }: { wallet: any }) {
                         onClick={() => setShowTopUp(true)}
                         className="h-14 px-10 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-900 hover:bg-[#C5A069] hover:text-[#0B1D45] shadow-2xl shadow-white/5 transition-all gap-2"
                      >
-                        <Plus size={16} /> Deposit Funds
+                        <Plus size={16} /> Add Money
                      </Button>
                      <Button variant="ghost" className="h-14 px-8 rounded-full text-[10px] font-black uppercase tracking-widest text-white border border-white/10 hover:bg-white/5 flex items-center gap-2">
                         Statement <ArrowDownLeft size={16} />
@@ -321,7 +321,7 @@ function ClientBilling({ wallet }: { wallet: any }) {
                   <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest not-italic border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all">VACS PROTECT™</span>
                </h3>
                <p className="text-sm text-slate-500 leading-relaxed mb-8 font-medium">
-                  If hospitalization occurs, our <span className="text-slate-900 font-bold underline decoration-[#C5A069] underline-offset-4 decoration-2">Clinical Retention Clause</span> reduces billing to a 25% standby rate, ensuring your dedicated caregiver is reserved for your return.
+                  If hospitalization occurs, our <span className="text-slate-900 font-bold underline decoration-[#C5A069] underline-offset-4 decoration-2">Hospital Standby Rate</span> reduces billing to a 25% standby rate, ensuring your dedicated caregiver is reserved for your return.
                </p>
                <div className="p-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 flex items-center justify-between">
                   <div>
@@ -337,12 +337,12 @@ function ClientBilling({ wallet }: { wallet: any }) {
             <div className="p-10 border-b border-slate-100 bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
                <div>
                   <h3 className="font-black text-slate-900 text-2xl tracking-tight uppercase italic">Financial Ledger</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Managed Transaction Node • Historical Record</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Your Payment History</p>
                </div>
                <div className="flex items-center gap-6">
                   <div className="text-right">
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cycle Type</p>
-                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Regional Weekly Audit</p>
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Billing Period</p>
+                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Weekly Billing</p>
                   </div>
                   <button className="h-10 px-6 bg-white border border-slate-200 rounded-xl text-[9px] font-black text-blue-600 uppercase tracking-widest hover:border-blue-500 hover:text-blue-700 transition-all shadow-sm">Statement Archive</button>
                </div>
@@ -351,10 +351,10 @@ function ClientBilling({ wallet }: { wallet: any }) {
               <table className="w-full text-left font-sans">
                  <thead className="bg-slate-50 text-[9px] font-black tracking-[0.2em] text-slate-500 uppercase">
                     <tr>
-                       <th className="px-10 py-6">Invoice Node</th>
-                       <th className="px-10 py-6">Engagement Period</th>
+                       <th className="px-10 py-6">Invoice No.</th>
+                       <th className="px-10 py-6">Care Dates</th>
                        <th className="px-10 py-6 text-right">Credits</th>
-                       <th className="px-10 py-6">Verified Status</th>
+                       <th className="px-10 py-6">Status</th>
                        <th className="px-10 py-6 text-right">Action</th>
                     </tr>
                  </thead>
@@ -380,7 +380,7 @@ function InvoiceRow({ id, period, amount, status }: any) {
             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-lg border border-emerald-100 uppercase tracking-widest">{status}</span>
          </td>
          <td className="px-10 py-8 text-right">
-            <Button variant="ghost" size="sm" className="text-blue-600 h-10 px-6 rounded-xl border border-slate-100 hover:bg-white hover:shadow-lg hover:border-blue-200 text-[9px] font-black uppercase tracking-widest underline underline-offset-4">Record View</Button>
+            <Button variant="ghost" size="sm" className="text-blue-600 h-10 px-6 rounded-xl border border-slate-100 hover:bg-white hover:shadow-lg hover:border-blue-200 text-[9px] font-black uppercase tracking-widest underline underline-offset-4">View Receipt</Button>
          </td>
       </tr>
    );
@@ -434,7 +434,7 @@ function ClientOverview({ client, wallet }: any) {
                 <ShieldAlert size={18} />
              </div>
              <p className="text-[10px] font-black text-red-900 uppercase tracking-widest leading-relaxed">
-                <span className="text-red-600">Protocol Alert:</span> Private hiring of VACS staff is a breach of the Service Agreement (Penalty: ₦500,000).
+                <span className="text-red-600">Care Note:</span> Private hiring of VACS staff is a breach of the Service Agreement (Penalty: ₦500,000).
              </p>
           </div>
           <button className="text-[9px] font-black uppercase tracking-widest text-red-600 underline">Read Agreement</button>
@@ -452,19 +452,19 @@ function ClientOverview({ client, wallet }: any) {
                   "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
                   isHospitalized ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" : "bg-emerald-50 text-emerald-600 border-emerald-100"
                 )}>
-                  {isHospitalized ? "HOSPITALIZED (RETENTION MODE)" : "Active Care"}
+                  {isHospitalized ? "CLIENT IN HOSPITAL" : "Active Care"}
                 </span>
              </div>
              <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500" /> Tier 2 Case Protocol</span>
+                <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500" /> Premium Care Plan</span>
                 <span className="flex items-center gap-2"><Calendar size={14} className="text-slate-300" /> ID: {client.id?.slice(0, 8)}</span>
              </div>
           </div>
           <div className="flex flex-col gap-4">
              <div className="bg-slate-900 text-white p-8 rounded-[2rem] text-center min-w-[240px] shadow-2xl relative z-10 border border-slate-800">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 uppercase">Account Ledger</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 uppercase">VACS Wallet</p>
                 <h4 className="text-4xl font-black tracking-tighter mb-4 tabular-nums">₦{balance.toLocaleString()}</h4>
-                <Link to="/client/billing" className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Deposit Clinical Credits</Link>
+                <Link to="/client/billing" className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Add Care Funds</Link>
              </div>
              <Button 
                onClick={() => setIsHospitalized(!isHospitalized)}
@@ -474,7 +474,7 @@ function ClientOverview({ client, wallet }: any) {
                  isHospitalized ? "bg-emerald-600 border-none" : "border-amber-200 text-amber-600 hover:bg-amber-50"
                )}
              >
-               {isHospitalized ? "Resume Standard Protocol" : "Trigger Pulse Clause (Hospitalized)"}
+               {isHospitalized ? "Resume Standard Protocol" : "Notify Hospital Stay"}
              </Button>
           </div>
        </div>
@@ -488,12 +488,12 @@ function ClientOverview({ client, wallet }: any) {
                       <ShieldCheck size={32} />
                    </div>
                    <div>
-                      <h3 className="text-2xl font-black tracking-tighter uppercase italic">VACS Service & Privacy Guarantee</h3>
+                      <h3 className="text-2xl font-black tracking-tighter uppercase italic">Our Care Promise</h3>
                       <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Consumer Protection Shield</p>
                    </div>
                 </div>
                 <p className="text-slate-300 text-sm font-medium leading-relaxed max-w-2xl italic">
-                  Your care integrity is our primary directive. Every VACS professional is monitored via our active clinical audit network to ensure 100% protocol adherence. We guarantee the privacy of your physiological data and the absolute reliability of our dispatch operations.
+                  Your family's care is our primary focus. Every VACS professional is supervised by our care quality team to ensure high standards are always met. We promise to keep your personal health information private and ensure the absolute reliability of our caregiver services.
                 </p>
              </div>
              <div className="shrink-0 flex flex-col gap-4 w-full md:w-auto">
@@ -517,8 +517,8 @@ function ClientOverview({ client, wallet }: any) {
           <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm">
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div>
-                   <h3 className="font-black text-slate-900 text-2xl tracking-tighter italic uppercase underline decoration-[#C5A069]/30 decoration-4 underline-offset-8">Clinical Vitals Node</h3>
-                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Real-time physiological tracking</p>
+                   <h3 className="font-black text-slate-900 text-2xl tracking-tighter italic uppercase underline decoration-[#C5A069]/30 decoration-4 underline-offset-8">Health Updates</h3>
+                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Updates on health vitals</p>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
                    <Clock size={16} className="text-[#C5A069]" />
@@ -538,14 +538,14 @@ function ClientOverview({ client, wallet }: any) {
 
           <div className="bg-[#0B1D45] p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
              <div className="relative z-10">
-                <h4 className="text-[10px] font-black text-[#C5A069] uppercase tracking-[0.3em] mb-8">Clinical Reminders</h4>
+                <h4 className="text-[10px] font-black text-[#C5A069] uppercase tracking-[0.3em] mb-8">Care Reminders</h4>
                 <div className="space-y-6">
-                   <ReminderItem time="16:00" text="Medication: Tier 2 Hypertension Protocol" status="PENDING" />
-                   <ReminderItem time="18:30" text="Nutritional Audit: Evening Meal hydration" status="UPCOMING" />
+                   <ReminderItem time="16:00" text="Medication: Blood Pressure Support" status="PENDING" />
+                   <ReminderItem time="18:30" text="Health Check: Evening hydration" status="UPCOMING" />
                    <div className="pt-6 border-t border-white/10">
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 italic">Protocol Policy Guide</p>
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 italic">Our Care Policy</p>
                       <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-xs text-white/70 italic leading-relaxed">
-                         "Reminders follow the VACS Zero-Latency policy. Late logs trigger immediate RN oversight calls."
+                         "VACS Promptness Policy. Late updates are reviewed immediately by our lead nurse."
                       </div>
                    </div>
                 </div>
@@ -562,12 +562,12 @@ function ClientOverview({ client, wallet }: any) {
                    <Lock size={32} />
                 </div>
                 <div>
-                   <h4 className="text-xl font-black text-rose-900 tracking-tighter uppercase italic">Oversight Dispatch Alert</h4>
-                   <p className="text-rose-600 text-[10px] font-black uppercase tracking-widest mt-1">Temporary Care Team Reassignment in Progress</p>
+                   <h4 className="text-xl font-black text-rose-900 tracking-tighter uppercase italic">Care Update Alert</h4>
+                   <p className="text-rose-600 text-[10px] font-black uppercase tracking-widest mt-1">Updating your care team</p>
                 </div>
              </div>
              <p className="text-rose-700 text-xs font-bold leading-relaxed max-w-md italic">
-               Our protocol audit has identified a temporary deviation in your assigned staff's ledger. A priority replacement node is being established to maintain your care continuity.
+               Our review has found a temporary change in your assigned caregiver's schedule. A replacement caregiver is being assigned to maintain your care.
              </p>
           </div>
        )}
@@ -593,12 +593,12 @@ function ClientOverview({ client, wallet }: any) {
                               "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm",
                               caregiver.verificationStatus === 'VERIFIED' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-600 border-red-100"
                             )}>
-                              {caregiver.verificationStatus === 'VERIFIED' ? "CLEARED FOR FIELD DISPATCH" : "Dispatch Suspended"}
+                              {caregiver.verificationStatus === 'VERIFIED' ? "CERTIFIED VACS CAREGIVER" : "Dispatch Suspended"}
                             </span>
                          </div>
-                         <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] leading-none mb-1">Authenticated Professional Profile</p>
+                         <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] leading-none mb-1">Certified VACS Caregiver</p>
                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-60">
-                            {caregiver.role === 'CAREGIVER' ? 'HEALTH CARE ASSISTANT' : caregiver.role} • LICENSED IN FIELD • ID: #{caregiver.id?.slice(0, 8)}
+                            CARE PROVIDER • REGISTERED PROFESSIONAL • ID: #{caregiver.id?.slice(0, 8)}
                          </p>
                       </div>
                    </div>
@@ -606,30 +606,30 @@ function ClientOverview({ client, wallet }: any) {
                    <div className="grid sm:grid-cols-2 gap-4">
                       <CaregiverContactItem 
                         icon={<Phone size={16} className="text-[#C5A069]" />} 
-                        label="Secure Voice Node" 
-                        value={caregiver.phoneNumber || caregiver.phone || "Encrypted Line"} 
+                        label="Official Care Number" 
+                        value={caregiver.phoneNumber || caregiver.phone || "Secure Number"} 
                       />
                       <CaregiverContactItem 
                         icon={<Mail size={16} className="text-[#C5A069]" />} 
-                        label="Protocol Relay Email" 
-                        value={caregiver.email || "Encrypted Registry"} 
+                        label="Support Email" 
+                        value={caregiver.email || "Protected Email"} 
                       />
                    </div>
                 </div>
 
                 <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 italic flex items-center gap-2">
-                       <ShieldCheck size={14} className="text-[#C5A069]" /> Professional Narrative & Domain Expertise
+                       <ShieldCheck size={14} className="text-[#C5A069]" /> About Your Caregiver
                    </p>
                    <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                      {caregiver.bio || "Field Professional with specialized training in Tier 2 Chronic Care Management and geriatric respiratory support. Certified under the VACS clinical audit protocol."}
+                      {caregiver.bio || "Care Professional with specialized training in elderly care and support. Certified under the VACS care quality review."}
                    </p>
                 </div>
              </div>
           </div>
        ) : (
           <div className="p-20 bg-white border border-slate-200 border-dashed rounded-[3rem] text-center opacity-40">
-             <p className="text-sm font-black uppercase tracking-widest text-slate-400 italic">No Field Staff Assigned to this Node</p>
+             <p className="text-sm font-black uppercase tracking-widest text-slate-400 italic">No Caregiver Assigned Yet</p>
           </div>
        )}
     </div>
@@ -669,7 +669,7 @@ export default function ClientDashboard({ user: initialUser, onLogout }: any) {
   const menuItems = [
     { path: "/client", label: "Care Plans", icon: Heart },
     { path: "/client/downloads", label: "App Gateway", icon: Download },
-    { path: "/client/logs", label: "Clinical Logs", icon: History },
+    { path: "/client/logs", label: "Care Reports", icon: History },
     { path: "/client/billing", label: "Financial Ledger", icon: Wallet },
     { path: "/client/schedule", label: "Service Calendar", icon: Calendar },
     { path: "/client/support", label: "Protocol Support", icon: MessageSquare },
@@ -701,7 +701,7 @@ export default function ClientDashboard({ user: initialUser, onLogout }: any) {
           <Route path="billing" element={<ClientBilling wallet={wallet} />} />
           <Route path="schedule" element={<div className="p-12 text-center text-slate-400">Service Calendar Under Construction</div>} />
           <Route path="support" element={<ClientSupport />} />
-          <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-[0.3em] italic mt-20 opacity-40">Connecting to clinical node...</div>} />
+          <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-[0.3em] italic mt-20 opacity-40">Connecting to care updates...</div>} />
         </Routes>
       </DashboardLayout>
 
@@ -719,10 +719,10 @@ export default function ClientDashboard({ user: initialUser, onLogout }: any) {
                   transition={{ type: "spring", damping: 30, stiffness: 300 }}
                   className="fixed top-0 right-0 h-screen w-full max-w-sm bg-white z-[101] shadow-2xl flex flex-col"
                >
-                  <div className="p-10 border-b border-slate-100 flex items-center justify-between">
-                     <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">System Bell</h3>
-                     <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-slate-900"><X size={24} /></button>
-                  </div>
+                   <div className="p-10 border-b border-slate-100 flex items-center justify-between">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Notifications</h3>
+                      <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-slate-900"><X size={24} /></button>
+                   </div>
                   <div className="flex-1 overflow-y-auto p-6 space-y-6">
                      {notifications.map(n => (
                         <div key={n.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex gap-4">

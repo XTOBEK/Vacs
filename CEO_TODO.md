@@ -30,7 +30,7 @@ Use the [VACS_TEST_CREDENTIALS.md](./VACS_TEST_CREDENTIALS.md) ledger to perform
 
 ---
 ### Operational Directives
-- [ ] Implement actual scheduling logistics node (Internal Dispatch).
-- [ ] Populate "Internal Academy" (LMS) with Rule 1-3 training materials.
-- [ ] Connect Finance & Payments to live transaction gateway.
-- [ ] Full Mobile Responsiveness sign-off.
+- [x] Implement actual scheduling logistics node (Internal Dispatch).
+- [x] Populate "Internal Academy" (LMS) with Rule 1-3 training materials.
+- [x] Connect Finance & Payments to live transaction gateway.
+- [x] Full Mobile Responsiveness sign-off.

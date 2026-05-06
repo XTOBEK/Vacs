@@ -4,7 +4,7 @@
 This ledger provides standardized credentials for testing the VACS clinical oversight dashboards. 
 **Password for all accounts:** `Vacstest2026!`
 
-### Test Accounts Cluster
+### Test Accounts Cluster (v0.3.0)
 
 | Role | Test Email | Assigned Dashboard Route | Oversight Level |
 | :--- | :--- | :--- | :--- |
@@ -15,12 +15,13 @@ This ledger provides standardized credentials for testing the VACS clinical over
 | **Admin Coordinator**| `coordinator@vacs.test` | `/vacs-control-gate` | Standard Admin |
 
 ---
-### QA Testing Instructions
+### QA Testing Instructions (v0.3.0)
 
-1. **Caregiver Login:** Verify active Protocol Warning Ledger appears if `compliance_strikes` > 0.
-2. **RN Login:** Verify the "Compliance Watchlist" widget identifies regional staff with strikes.
-3. **Admin Login:** Access the "System-Wide Compliance Oversight" to manage protocol deviations.
-4. **Client Login:** Confirm the "VACS Service & Privacy Guarantee" replaces technical protocol warnings.
+1.  **Scheduling Node**: Log in as **Coordinator**, navigate to `Scheduling`, and create a shift. Ensure double-booking triggers the protocol error.
+2.  **Internal Academy**: Log in as **Caregiver**, navigate to `Academy`. Watch a module and complete the assessment to check verification logic.
+3.  **Financials**: Log in as **Coordinator**, navigate to `Finances`. Test the settlement rerouting for invoices.
+4.  **Mobile Navigation**: Use a mobile viewport (simulating Nubia Neo 2 5G) to verify the new bottom navigation bar accessibility.
+5.  **Security Audit**: Verify that a Caregiver cannot access the `Finances` node or other patients' logs via direct URL manipulation.
 
 > [!CAUTION]
 > These accounts are for internal QA validation only. Real production data must never be stored in test nodes.

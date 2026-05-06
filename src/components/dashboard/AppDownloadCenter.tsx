@@ -34,12 +34,12 @@ export default function AppDownloadCenter({ role, userData }: DownloadCenterProp
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 mb-2 block">VACS Digital Gateway</span>
-            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Artifact & App Inventory</h3>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Apps & Documents</h3>
           </div>
           <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Security Clearance:</span>
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{role} NODE</span>
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{role} Access</span>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function AppDownloadCenter({ role, userData }: DownloadCenterProp
           icon={<Smartphone size={32} />}
           title="VACS Field Mobile"
           version="v2.8.4"
-          description="Mandatory for Geofenced Clock-In/Out. Access prohibited if GPS > 100m from client home."
+          description="Required for check-in and check-out. Uses location to verify your visit."
           type="Core App"
           status="Authorized"
         />
@@ -62,14 +62,14 @@ export default function AppDownloadCenter({ role, userData }: DownloadCenterProp
               isGlobal={false}
               isLocked={!isKitVerified}
               reason={!isKitVerified ? "Medical Kit Verification Required" : ""}
-              details="HCA Foundational Certificate. Hard-watermarked. Not for external use (is_global: false)."
+              details="Basic care certificate. For use within VACS only."
             />
             <CertificationCard 
               title="Tier 3 (SCA) Global"
               isGlobal={true}
               isLocked={!hasMetTenure || !isPaid || !isKitVerified}
               reason={!hasMetTenure ? "6-Month Service Tenure Required" : !isPaid ? "Buyout/Training Fee Unpaid" : "Kit Verification Required"}
-              details="Global Senior Care Assistant Accreditation. Unlocks higher pay tiers and external validity."
+              details="Senior care certificate. Valid everywhere and increases your pay."
             />
           </>
         )}
@@ -90,7 +90,7 @@ export default function AppDownloadCenter({ role, userData }: DownloadCenterProp
             icon={<ShieldAlert size={32} />}
             title="Logistics Controller"
             version="v1.2"
-            description="Manage Surge pricing, Zone 3 Logistics reviews, and SiteSettings CMS controller."
+            description="Manage Surge pricing, Zone 3 Logistics reviews, and Website settings controller."
             type="System Admin"
             status="Root Access"
           />
@@ -101,7 +101,7 @@ export default function AppDownloadCenter({ role, userData }: DownloadCenterProp
               <h4 className="text-xl font-black italic uppercase tracking-tight mb-4">Field Support</h4>
               <p className="text-slate-400 text-xs font-medium leading-relaxed">System-authorized staff can contact the VACS Digital COO Hub for remote node assistance.</p>
            </div>
-           <Button className="w-full h-14 rounded-xl bg-white text-slate-900 hover:bg-blue-50 text-[10px] font-black uppercase tracking-widest relative z-10">Contact Controller</Button>
+           <Button className="w-full h-14 rounded-xl bg-white text-slate-900 hover:bg-blue-50 text-[10px] font-black uppercase tracking-widest relative z-10">Contact Support</Button>
            <Clock className="absolute -bottom-10 -right-10 w-48 h-48 text-white/5 -z-0" />
         </div>
       </div>
@@ -124,7 +124,7 @@ function DownloadCard({ icon, title, version, description, type, status }: any) 
         <p className="text-sm font-medium text-slate-500 leading-relaxed mb-8">{description}</p>
       </div>
       <Button className="w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3">
-         <Download size={16} /> Deploy Artifact
+         <Download size={16} /> Download
       </Button>
     </div>
   );
@@ -155,7 +155,7 @@ function CertificationCard({ title, isGlobal, isLocked, reason, details }: any) 
 
       <div className="flex-1">
         <h4 className={cn("text-xl font-black tracking-tight italic uppercase mb-4", isLocked ? "text-slate-400" : "text-slate-900")}>{title}</h4>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Protocol Specs:</p>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Certificate Details:</p>
         <p className="text-xs font-medium text-slate-500 leading-relaxed mb-8">{details}</p>
       </div>
 

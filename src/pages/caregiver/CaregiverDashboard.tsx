@@ -28,12 +28,14 @@ import {
   BellRing,
   Volume2,
   FileSearch,
-  BookOpen
+  BookOpen,
+  GraduationCap
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
 import Logo from "../../components/ui/Logo";
 import { DigitalRecordBook } from "../../components/dashboard/DigitalRecordBook";
+import AcademyPage from "./AcademyPage";
 
 export default function CaregiverDashboard({ user: initialUser, onLogout }: any) {
   const [user, setUser] = useState(initialUser);
@@ -56,6 +58,7 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
   const navItems = [
     { icon: Home, path: "/dashboard", label: "Overview" },
     { icon: Calendar, path: "/dashboard/schedule", label: "My Schedule" },
+    { icon: GraduationCap, path: "/dashboard/academy", label: "Academy" },
   ];
 
   return (
@@ -64,7 +67,7 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
       <header className="md:hidden bg-[#0B1D45] text-white p-6 sticky top-0 z-40 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
            <Logo size="sm" inverted />
-           <span className="font-black tracking-tighter text-lg uppercase text-white">VACS Field</span>
+           <span className="font-black tracking-tighter text-lg uppercase text-white">VACS Caregiver</span>
         </div>
         <button onClick={onLogout} className="p-2 bg-white/10 rounded-xl border border-white/20">
            <Zap size={18} className="text-[#C5A069]" />
@@ -78,7 +81,7 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
                <Logo size="sm" inverted />
                <h1 className="text-xl font-black text-white tracking-tighter">VACS</h1>
             </div>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-3 leading-none">Field Professional Portal</p>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-3 leading-none">Caregiver Portal</p>
          </div>
 
          <nav className="flex-1 py-8 px-4 space-y-1">
@@ -105,11 +108,11 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
                   <div className="w-8 h-8 rounded-full bg-[#C5A069] flex items-center justify-center text-[#0B1D45] font-bold font-serif italic text-[10px]">{user.fullName?.[0] || user.full_name?.[0]}</div>
                   <div className="min-w-0">
                      <p className="text-xs font-bold text-white truncate">{user.fullName || user.full_name}</p>
-                     <p className="text-[9px] text-[#C5A069] font-black uppercase tracking-widest mt-0.5 italic">Tier 2 Professional</p>
+                     <p className="text-[9px] text-[#C5A069] font-black uppercase tracking-widest mt-0.5 italic">Senior Caregiver</p>
                   </div>
                </div>
                <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/10 p-0 px-2 h-8 text-[10px] font-black uppercase tracking-widest gap-2" onClick={onLogout}>
-                  <Zap size={12} /> Log Off System
+                  <Zap size={12} /> Sign Out
                </Button>
             </div>
          </div>
@@ -121,8 +124,9 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
           <Route index element={<CaregiverHome user={user} />} />
           <Route path="kit-verification" element={<MedicalKitVerification user={user} />} />
           <Route path="care-log" element={<DailyCareLog />} />
-          <Route path="emergency" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-xs mt-20 opacity-40">Immediate Clinical Response Required. Contacting Supervisor...</div>} />
-          <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-xs mt-20 opacity-40">Module Access Pending...</div>} />
+          <Route path="academy" element={<AcademyPage />} />
+          <Route path="emergency" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-xs mt-20 opacity-40">Emergency Assistance Required. Alerting Supervisor...</div>} />
+          <Route path="*" element={<div className="p-12 text-center text-slate-400 font-black uppercase tracking-widest text-xs mt-20 opacity-40">Feature coming soon...</div>} />
         </Routes>
       </main>
 
@@ -149,7 +153,7 @@ export default function CaregiverDashboard({ user: initialUser, onLogout }: any)
         className="fixed bottom-24 right-4 h-14 w-14 bg-red-600 rounded-2xl shadow-[0_15px_35px_-8px_rgba(220,38,38,0.4)] flex items-center justify-center text-white md:bottom-12 md:right-12 group transition-transform active:scale-90 z-50 border-2 border-red-500"
       >
         <ShieldAlert size={28} className="animate-[pulse_1s_infinite]" />
-        <span className="absolute right-20 bg-slate-900 text-white text-[10px] font-black px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest whitespace-nowrap shadow-2xl border border-slate-700 pointer-events-none">Immediate Critical Incident report</span>
+        <span className="absolute right-20 bg-slate-900 text-white text-[10px] font-black px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest whitespace-nowrap shadow-2xl border border-slate-700 pointer-events-none">Emergency Incident Report</span>
       </Link>
     </div>
   );
@@ -190,7 +194,7 @@ function CaregiverHome({ user }: any) {
       },
       (error) => {
         console.error("Geolocation error:", error);
-        alert("Unable to retrieve your location for secure clock-in protocol.");
+        alert("We couldn't find your location. Please enable location to start your visit.");
       }
     );
   };
@@ -233,8 +237,8 @@ function CaregiverHome({ user }: any) {
                   shiftStatus === 'ONGOING' ? "bg-emerald-500 animate-pulse" : "bg-slate-600"
                 )}></div>
                 <div>
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Deployment Node</p>
-                   <p className="text-xs font-black uppercase tracking-tighter italic">{shiftStatus === 'ONGOING' ? "Operation Live" : "Awaiting Dispatch"}</p>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Work Status</p>
+                   <p className="text-xs font-black uppercase tracking-tighter italic">{shiftStatus === 'ONGOING' ? "Currently on Visit" : "Available for Visit"}</p>
                 </div>
              </div>
 
@@ -245,8 +249,8 @@ function CaregiverHome({ user }: any) {
              )}>
                 {kitStatus === 'VERIFIED' ? <CheckCircle2 size={24} /> : <ShieldAlert size={24} className="animate-pulse" />}
                 <div>
-                   <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Medical Kit Status</p>
-                   <p className="text-sm font-black italic uppercase tracking-tighter">{kitStatus === 'VERIFIED' ? "VACS Certified" : "Action Required"}</p>
+                   <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Care Kit Status</p>
+                   <p className="text-sm font-black italic uppercase tracking-tighter">{kitStatus === 'VERIFIED' ? "VACS Approved" : "Check Needed"}</p>
                 </div>
                 {kitStatus !== 'VERIFIED' && (
                   <Link to="/dashboard/kit-verification">
@@ -272,12 +276,12 @@ function CaregiverHome({ user }: any) {
                       <ShieldAlert size={32} />
                    </div>
                    <div>
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Protocol Warning Ledger</h3>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Care Standard Updates</h3>
                       <p className={cn(
                         "text-[10px] font-black uppercase tracking-widest mt-1",
                         strikes === 2 ? "text-rose-600" : "text-amber-600"
                       )}>
-                        {strikes} of 3 Strikes Recorded • Clinical Oversight Node Active
+                        {strikes} of 3 Strikes Recorded • Monitoring care standards
                       </p>
                    </div>
                 </div>
@@ -296,8 +300,8 @@ function CaregiverHome({ user }: any) {
              </div>
              <p className="text-slate-500 text-xs font-bold mt-6 leading-relaxed uppercase tracking-wide italic">
                 {strikes === 2 
-                  ? "FINAL WARNING: Your next protocol deviation will result in immediate system lockout and clinical review." 
-                  : "A protocol deviation has been documented. Please review the Three-Rule System to maintain field eligibility."}
+                  ? "FINAL ALERT: Your next safety alert will result in a suspension and agency review." 
+                  : "A safety alert has been recorded. Please review our care guidelines to stay in good standing."}
              </p>
           </div>
        )}
@@ -312,7 +316,7 @@ function CaregiverHome({ user }: any) {
                   shiftStatus === 'ONGOING' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-slate-50 text-slate-400 border-slate-100"
                 )}>
                    <div className={cn("w-2 h-2 rounded-full", shiftStatus === 'ONGOING' ? "bg-blue-600 animate-pulse" : "bg-slate-300")}></div> 
-                   {shiftStatus === 'ONGOING' ? "Active Clinical Engagement" : "Protocol Standby"}
+                   {shiftStatus === 'ONGOING' ? "Currently Providing Care" : "Available / Between Visits"}
                 </span>
                 <div className="hidden lg:flex items-center gap-2">
                    <div className="flex items-center gap-1">
@@ -330,10 +334,10 @@ function CaregiverHome({ user }: any) {
              </div>
              <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Assigned Case Node</p>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Assigned Client</p>
                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter">Margaret Stewart</h3>
                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
-                      <Clock size={14} className="text-slate-300" /> 08:00 – 16:00 Corridor • Morning Complex Care
+                      <Clock size={14} className="text-slate-300" /> 08:00 – 16:00 • Morning Visit
                    </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -341,7 +345,7 @@ function CaregiverHome({ user }: any) {
                      <>
                         <Link to="/dashboard/care-log">
                            <Button className="h-14 px-8 rounded-full text-xs font-black uppercase tracking-widest gap-3 shadow-xl shadow-blue-600/10">
-                              <ClipboardCheck size={18} /> Digital Vital Log
+                              <ClipboardCheck size={18} /> Care Activity Log
                            </Button>
                         </Link>
                         <Button 
@@ -352,7 +356,7 @@ function CaregiverHome({ user }: any) {
                           }}
                           className="h-14 px-8 rounded-full text-xs font-black uppercase tracking-widest gap-3 border-rose-200 text-rose-600 hover:bg-rose-50"
                         >
-                           Clock Out Protocol
+                           End Visit
                         </Button>
                      </>
                    ) : (
@@ -360,7 +364,7 @@ function CaregiverHome({ user }: any) {
                         onClick={handleClockIn}
                         className="h-14 px-10 rounded-full text-xs font-black uppercase tracking-widest gap-3 shadow-2xl shadow-[#C5A069]/20 bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158] border-none"
                       >
-                         <MapPin size={18} /> Initiate Geolocation Clock-In
+                         <MapPin size={18} /> Start Visit (Location Check)
                       </Button>
                    )}
                 </div>
@@ -376,22 +380,22 @@ function CaregiverHome({ user }: any) {
                       <ShieldAlert size={24} />
                     </div>
                     <div>
-                       <h4 className="text-xl font-black tracking-tighter uppercase italic">Three-Rule Protocol</h4>
-                       <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mt-0.5">Directive #2026-X</p>
+                       <h4 className="text-xl font-black tracking-tighter uppercase italic">Our Three Care Principles</h4>
+                       <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mt-0.5">VACS Quality Standards</p>
                     </div>
                  </div>
                  <div className="space-y-6">
                     <div className="group">
-                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Rule 1: Temporal Integrity</p>
-                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">DVP tracking verified on-site. Delayed entries trigger immediate audits.</p>
+                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Care Principle 1: Timeliness</p>
+                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Being on time is essential. We note visit times to keep families informed and confident.</p>
                     </div>
                     <div className="group">
-                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Rule 2: Identity Guard</p>
-                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Terminal access strictly tied to biological ID verification.</p>
+                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Care Principle 2: Safe Access</p>
+                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Secure app access helps protect you and our clients during every visit.</p>
                     </div>
                     <div className="group">
-                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Rule 3: Clinical Shield</p>
-                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Diagnostic data must never exit the encrypted registry bounds.</p>
+                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Care Principle 3: Privacy</p>
+                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Always keep health information private and safe within this secure app.</p>
                     </div>
                  </div>
               </div>
@@ -399,12 +403,12 @@ function CaregiverHome({ user }: any) {
            </div>
 
            <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 italic">Professional Compliance</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 italic">Professional Standing</h4>
               <div className="space-y-6">
                  <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0"><CheckCircle2 size={18} /></div>
                     <div>
-                       <p className="text-sm font-black text-slate-900 tracking-tight uppercase italic">Background Audit: CLEARED</p>
+                       <p className="text-sm font-black text-slate-900 tracking-tight uppercase italic">Background Check: CLEARED</p>
                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Valid until Dec 2026</p>
                     </div>
                  </div>
@@ -428,7 +432,7 @@ function CaregiverHome({ user }: any) {
              <div className="flex-1 text-center lg:text-left">
                 <h3 className="text-3xl font-black tracking-tighter italic uppercase mb-4 underline decoration-blue-500 decoration-4 underline-offset-8">Referral Network</h3>
                 <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
-                  Expand our clinical node. Referral success grants 500 Credits to your professional ledger once they clear the VACS background audit.
+                  Help us grow our team. Referral success grants 500 Credits to your professional ledger once they pass the VACS background check.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -449,7 +453,7 @@ function CaregiverHome({ user }: any) {
                    />
                 </div>
                 <div className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-900 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
-                   Scan Clinical QR
+                   Scan to Apply
                 </div>
              </div>
           </div>
@@ -578,9 +582,9 @@ function DailyCareLog() {
                   >
                      <CheckCircle2 size={64} strokeWidth={3} />
                   </motion.div>
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic mb-2">Protocol Sealed</h3>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic mb-2">Log Saved Successfully</h3>
                   <p className="text-sm text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                    Log Entry successfully encrypted and synchronized with VACS registry.
+                    Your care update has been saved and shared with the agency.
                   </p>
                   
                   <div className="mt-12 flex items-center gap-2">
@@ -596,8 +600,8 @@ function DailyCareLog() {
        <div className="flex items-center gap-5">
           <Link to="/dashboard" className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shadow-sm"><Home size={20} /></Link>
           <div className="flex-1 min-w-0">
-             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Daily Vital Protocol (DVP)</h2>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Submission for Clinical Evidence Record</p>
+             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Daily Care Update</h2>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Record of Care Provided Today</p>
           </div>
        </div>
 
@@ -610,7 +614,7 @@ function DailyCareLog() {
                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
                    <Activity size={24} className="animate-pulse" />
                 </div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Diagnostic Phase</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Health Check</h3>
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <VitalInput icon={<Thermometer size={18}/>} label="Body Temp" placeholder="98.6" value={vitals.temp} onChange={(val: string) => setVitals({...vitals, temp: val})} />
@@ -628,7 +632,7 @@ function DailyCareLog() {
                 <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
                    <UserCheck size={24} />
                 </div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Activity Protocol</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Activities Completed</h3>
              </div>
              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 px-2">
                 <ActivityToggle icon="🚿" label="Bathing" onToggle={(active: boolean) => active ? setActivities([...activities, 'Bathing']) : setActivities(activities.filter(a => a !== 'Bathing'))} />
@@ -647,7 +651,7 @@ function DailyCareLog() {
             disabled={isSubmitting}
             className="w-full h-20 text-xs font-black uppercase tracking-[0.3em] rounded-3xl shadow-2xl shadow-blue-500/30 transition-transform active:scale-95 disabled:opacity-50"
           >
-             {isSubmitting ? "Encrypting Protocol..." : "Verify Clinical Integrity & Seal Log"}
+             {isSubmitting ? "Encrypting Protocol..." : "Save & Complete Update"}
           </Button>
        </div>
     </div>
@@ -747,8 +751,8 @@ function MedicalKitVerification({ user }: any) {
   return (
     <div className="p-6 md:p-14 max-w-2xl mx-auto space-y-10">
        <div className="flex flex-col gap-2">
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Medical Kit Proof</h2>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Mandatory Clinical Asset Verification</p>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Care Kit Photo</h2>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Standard Equipment Check</p>
        </div>
 
        <div className="bg-white border border-slate-200 rounded-[3rem] p-10 md:p-14 text-center shadow-xl shadow-slate-200/50 space-y-10 relative overflow-hidden">
@@ -763,8 +767,8 @@ function MedicalKitVerification({ user }: any) {
                   <>
                     <Thermometer size={48} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                     <div className="space-y-1">
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-600">Upload Photo of BP Monitor & Gait Belt</p>
-                       <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic group-hover:text-slate-400">Must show clinical serial number</p>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-600">Photo of your Care Kit items</p>
+                       <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic group-hover:text-slate-400">Please show equipment clearly</p>
                     </div>
                   </>
                 )}
@@ -775,7 +779,7 @@ function MedicalKitVerification({ user }: any) {
                 <div className="flex items-center gap-4 text-left p-6 bg-slate-50 rounded-2xl border border-slate-100">
                   <ShieldAlert size={20} className="text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-loose">
-                    Strict Policy: Field staff cannot clock-in for Tier 3/4 cases without an RN-verified Medical Kit.
+                    Strict Policy: Caregivers must have an approved kit to start specialized care visits.
                   </p>
                 </div>
                 <Button 
@@ -783,7 +787,7 @@ function MedicalKitVerification({ user }: any) {
                   onClick={handleUpload}
                   className="w-full h-16 rounded-3xl text-sm font-black uppercase tracking-widest bg-slate-900 border-none shadow-2xl shadow-slate-900/20"
                 >
-                  {verifying ? "Initializing Protocol Audit..." : "Submit for Verification"}
+                  {verifying ? "Verifying care kit..." : "Submit for Verification"}
                 </Button>
               </div>
             </>
@@ -793,8 +797,8 @@ function MedicalKitVerification({ user }: any) {
                   <CheckCircle2 size={48} strokeWidth={3} />
                </div>
                <div className="space-y-2">
-                 <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">Receipt Acknowledged</h3>
-                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Routing to Supervising RN for final audit.</p>
+                 <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">Photo Received</h3>
+                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Sharing with our lead nurse for final check.</p>
                </div>
                <Link to="/dashboard">
                   <Button variant="ghost" className="h-14 px-10 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 border border-slate-200">Return to Node</Button>

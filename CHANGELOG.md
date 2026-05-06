@@ -33,6 +33,17 @@ All notable changes to this project will be documented in this file.
 - Master access is fully restored and integrated into the unified VACS Control Gate.
 - Next phase focuses on connecting the Dynamic CMS to live public pages.
 
+## [0.3.1] - 2026-05-06
+### [ADDED]
+- **Scheduling Logistics Node**: Master dispatch node with double-booking prevention logic.
+- **VACS Academy (LMS)**: Internal video-centric training module with assessment grading.
+- **Financial Settlement Gateways**: Integration stubs for Paystack/Flutterwave with Invoicing and Payout ledgers.
+- **Mobile Bottom Navigation**: Thumb-friendly navigation bar for enhanced mobile accessibility (optimized for Nubia Neo 2 5G).
+
+### [SECURED]
+- **Hardened Firestore Rules**: Implemented "Least Privilege" cross-role data isolation.
+- **Identity Guard**: Caregivers restricted to assigned client logs.
+
 ## [0.3.0] - 2026-05-06
 
 ### Added

@@ -133,7 +133,7 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold truncate text-white uppercase italic tracking-tighter">{displayUser.full_name || displayUser.fullName}</div>
-                <div className="text-[10px] text-[#C5A069] font-black uppercase tracking-wide italic">{isSuper ? "Super Admin Portal" : "Verified Clinical Session"}</div>
+                <div className="text-[10px] text-[#C5A069] font-black uppercase tracking-wide italic">{isSuper ? "Super Admin Portal" : "Secure Staff Session"}</div>
               </div>
             </div>
             <Button 
@@ -187,9 +187,37 @@ export default function DashboardLayout({ user, onLogout, children, menuItems }:
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8 pb-32 md:pb-8">
            {children}
         </div>
+
+        {/* Mobile Bottom Navigation - Thumb Friendly */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0B1D45] border-t border-white/10 flex items-center justify-around px-2 z-[60] safe-area-bottom shadow-[0_-10px_30px_rgba(0,0,0,0.3)]">
+           {menuItems.slice(0, 4).map((item: any) => (
+              <Link 
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-2xl transition-all",
+                  location.pathname === item.path ? "bg-[#C5A069] text-[#0B1D45]" : "text-slate-400"
+                )}
+              >
+                 <item.icon size={20} />
+                 <span className="text-[7px] font-black uppercase tracking-tighter truncate w-full text-center">{item.label}</span>
+              </Link>
+           ))}
+           <button 
+             onClick={() => setIsMobileSidebarOpen(true)}
+             className="flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-2xl text-slate-400"
+           >
+              <div className="flex flex-col gap-0.5">
+                 <div className="w-4 h-0.5 bg-current rounded-full"></div>
+                 <div className="w-4 h-0.5 bg-current rounded-full"></div>
+                 <div className="w-4 h-0.5 bg-current rounded-full"></div>
+              </div>
+              <span className="text-[7px] font-black uppercase tracking-tighter truncate w-full text-center">Menu</span>
+           </button>
+        </nav>
 
         {/* Side Notification Panel */}
         <AnimatePresence>

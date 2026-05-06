@@ -101,6 +101,9 @@
       "type": "object",
       "properties": {
         "title": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
         "questions": {
           "type": "array",
           "items": {
@@ -114,6 +117,31 @@
         },
         "passingScore": { "type": "number" },
         "isPublished": { "type": "boolean" }
+      }
+    },
+    "Invoice": {
+      "title": "Billing Invoice",
+      "description": "Financial demand for care services.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "PAID", "FAILED", "PARTIAL"] },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "paymentReference": { "type": "string" }
+      }
+    },
+    "Payout": {
+      "title": "Staff Payout",
+      "description": "Payment record for caregiver services.",
+      "type": "object",
+      "properties": {
+        "caregiverId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"] },
+        "processedAt": { "type": "string", "format": "date-time" },
+        "reference": { "type": "string" }
       }
     },
     "Assessment": {
@@ -198,6 +226,14 @@
     "/applications/{applicationId}": {
       "schema": "Application",
       "description": "Applicant submissions"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Client billing registry"
+    },
+    "/payouts/{payoutId}": {
+      "schema": "Payout",
+      "description": "Caregiver payout registry"
     }
   }
 }
