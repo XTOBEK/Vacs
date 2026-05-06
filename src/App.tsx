@@ -19,6 +19,8 @@ import FAQPage from "./pages/public/FAQPage";
 import CareersPage from "./pages/public/Careers";
 import ApplicationForm from "./pages/public/ApplicationForm";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLoginPage from "./pages/public/AdminLoginPage";
+import NotFound from "./pages/public/NotFound";
 import RNDashboard from "./pages/rn/RNDashboard";
 import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
 import ClientDashboard from "./pages/client/ClientDashboard";
@@ -114,11 +116,14 @@ export default function App() {
         />
         
         {/* Admin Secret Gate */}
-        <Route path="/vacs-control-gate/login" element={<LoginPage adminOnly />} />
+        <Route path="/vacs-control-gate/login" element={<AdminLoginPage />} />
         
         {/* Fallback for profile creation */}
-        {user?.needsProfile && (
+        {user?.needsProfile ? (
            <Route path="*" element={<Navigate to={`/register/${user.role || 'CAREGIVER'}`} />} />
+        ) : (
+           /* 404 - Page Not Found */
+           <Route path="*" element={<NotFound />} />
         )}
       </Routes>
       <AiNavWidget />

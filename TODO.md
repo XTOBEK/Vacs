@@ -25,7 +25,8 @@ This file is your project roadmap.
 - [x] Implemented "Link Clinical Identity" workflow
 - [x] Hardened Firestore security rules with handleFirestoreError
     - [x] Fixed "Missing or insufficient permissions" for notifications collection
-- [ ] Connect Dynamic CMS modules (Landing, About, Services) - *In Progress*
+- [x] Connect Dynamic CMS modules (Landing, About, Services) to live Firestore data
+- [x] Integrated Active Incident Map and Live Feedback with real-time Firestore notifications
 - [ ] Implement actual scheduling logistics node
 - [ ] Build out the "Internal Academy" (LMS) modules
 - [ ] Refine "Finances & Payments" with real gateway integration

@@ -479,6 +479,39 @@ function ClientOverview({ client, wallet }: any) {
           </div>
        </div>
 
+       {/* VACS Service & Privacy Guarantee */}
+       <div className="bg-gradient-to-br from-[#0B1D45] to-[#1a2e5a] rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/5 group mb-10">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
+             <div className="flex-1">
+                <div className="flex items-center gap-4 mb-6">
+                   <div className="w-14 h-14 bg-[#C5A069] rounded-2xl flex items-center justify-center text-[#0B1D45] shadow-xl shadow-[#C5A069]/20">
+                      <ShieldCheck size={32} />
+                   </div>
+                   <div>
+                      <h3 className="text-2xl font-black tracking-tighter uppercase italic">VACS Service & Privacy Guarantee</h3>
+                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Consumer Protection Shield</p>
+                   </div>
+                </div>
+                <p className="text-slate-300 text-sm font-medium leading-relaxed max-w-2xl italic">
+                  Your care integrity is our primary directive. Every VACS professional is monitored via our active clinical audit network to ensure 100% protocol adherence. We guarantee the privacy of your physiological data and the absolute reliability of our dispatch operations.
+                </p>
+             </div>
+             <div className="shrink-0 flex flex-col gap-4 w-full md:w-auto">
+                <Button className="h-14 px-10 rounded-full bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158] border-none text-xs font-black uppercase tracking-widest gap-3 shadow-xl shadow-[#C5A069]/20">
+                   <FileText size={18} /> View Guarantee Certificate
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-14 px-10 rounded-full bg-transparent border-rose-500/50 text-rose-400 hover:bg-rose-500/10 text-xs font-black uppercase tracking-widest gap-3"
+                  onClick={() => alert("ISSUE PROTOCOL ACTIVATED: A VACS RN Supervisor will contact you within 15 minutes.")}
+                >
+                   <ShieldAlert size={18} /> Report a Service Issue
+                </Button>
+             </div>
+          </div>
+          <ShieldCheck size={280} className="absolute -bottom-20 -left-20 text-white/5 opacity-50 rotate-12 group-hover:scale-110 transition-transform duration-1000" />
+       </div>
+
        {/* Diagnostic Vitals Protocol */}
        <div className="grid lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm">
@@ -520,6 +553,24 @@ function ClientOverview({ client, wallet }: any) {
              <Clock size={180} className="absolute -bottom-10 -right-10 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-1000" />
           </div>
        </div>
+
+       {/* Caregiver Identity Protocol */}
+       {caregiver && caregiver.status === 'locked_pending_review' && (
+          <div className="bg-rose-50 border-2 border-rose-200 rounded-[2.5rem] p-8 mb-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+             <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-rose-600/20">
+                   <Lock size={32} />
+                </div>
+                <div>
+                   <h4 className="text-xl font-black text-rose-900 tracking-tighter uppercase italic">Oversight Dispatch Alert</h4>
+                   <p className="text-rose-600 text-[10px] font-black uppercase tracking-widest mt-1">Temporary Care Team Reassignment in Progress</p>
+                </div>
+             </div>
+             <p className="text-rose-700 text-xs font-bold leading-relaxed max-w-md italic">
+               Our protocol audit has identified a temporary deviation in your assigned staff's ledger. A priority replacement node is being established to maintain your care continuity.
+             </p>
+          </div>
+       )}
 
        {/* Caregiver Identity Protocol */}
        {caregiver ? (

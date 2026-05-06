@@ -171,6 +171,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-8 leading-none">Intelligence</h4>
             <div className="flex flex-col gap-4">
                <Link to="/login" className="text-xs font-black uppercase tracking-widest text-slate-100 bg-slate-800 px-6 py-3 rounded-full text-center hover:bg-slate-700 transition-colors">System Login</Link>
+               <Link to="/vacs-control-gate/login" className="text-[9px] font-black uppercase tracking-[0.3em] text-[#C5A069] bg-[#C5A069]/5 border border-[#C5A069]/20 px-6 py-3 rounded-full text-center hover:bg-[#C5A069]/10 transition-colors">Control Gate Login</Link>
                <Link to="/contact" className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-700 hover:text-blue-500 text-center transition-colors">Support Center</Link>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../../components/ui/Button";
 import { 
@@ -12,9 +12,19 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
+import { db } from "../../lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function LandingPage() {
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
+  const [cmsData, setCmsData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "cms", "landing"), (doc) => {
+      if (doc.exists()) setCmsData(doc.data());
+    });
+    return unsub;
+  }, []);
 
   return (
     <MainLayout>
@@ -28,14 +38,14 @@ export default function LandingPage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-700 rounded-full text-[10px] font-black uppercase tracking-widest mb-8 border border-blue-100 shadow-sm">
-              <ShieldCheck size={14} className="animate-pulse" /> Registered Nurse Oversight
+              <ShieldCheck size={14} className="animate-pulse" /> {cmsData?.heroBadge || "Registered Nurse Oversight"}
             </div>
-            <h1 className="text-5xl md:text-8xl font-black text-slate-900 leading-[0.95] mb-8 tracking-tighter">
-              Safe, Dignified <br />
-              <span className="text-blue-600 bg-clip-text">Accountable</span> Care.
+            <h1 className="text-5xl md:text-8xl font-black text-slate-900 leading-[0.95] mb-8 tracking-tighter uppercase italic">
+              {cmsData?.heroTitle?.split(' ').slice(0, -1).join(' ') || "Safe, Dignified"} <br />
+              <span className="text-blue-600 bg-clip-text">{cmsData?.heroTitle?.split(' ').slice(-1)[0] || "Accountable"}</span> Care.
             </h1>
             <p className="text-lg md:text-xl text-slate-500 mb-10 max-w-lg leading-relaxed font-medium">
-              VACS provides clinical-grade non-medical home care, ensuring quality through rigorous RN auditing and tiered caregiver expertise.
+              {cmsData?.heroDescription || "VACS provides clinical-grade non-medical home care, ensuring quality through rigorous RN auditing and tiered caregiver expertise."}
             </p>
             <div className="flex flex-wrap gap-5">
               <Button size="lg" className="h-14 px-8 md:px-10 rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/20" onClick={() => setIsDiscoveryOpen(true)}>Start Application</Button>
@@ -46,8 +56,8 @@ export default function LandingPage() {
             
             <div className="mt-16 md:mt-20 flex items-center gap-6 md:gap-12 text-slate-400">
               <div className="flex flex-col font-black">
-                 <span className="text-slate-900 text-xl md:text-2xl tracking-tighter">LGA</span>
-                 <span className="text-[8px] md:text-[10px] uppercase tracking-widest opacity-60">Verified Area</span>
+                 <span className="text-slate-900 text-xl md:text-2xl tracking-tighter">{cmsData?.stat1Value || "LGA"}</span>
+                 <span className="text-[8px] md:text-[10px] uppercase tracking-widest opacity-60">{cmsData?.stat1Label || "Verified Area"}</span>
               </div>
               <div className="h-8 w-px bg-slate-200"></div>
               <div className="flex flex-col font-black">
@@ -70,7 +80,7 @@ export default function LandingPage() {
           >
              <div className="aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] relative z-10 border-[8px] md:border-[12px] border-white">
                 <img 
-                  src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?q=80&w=2000" 
+                  src={cmsData?.heroImage || "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?q=80&w=2000"} 
                   alt="Clinical Caregiving" 
                   className="w-full h-full object-cover grayscale-[0.2] hover:grayscale-0 transition-all duration-700 hover:scale-105" 
                 />

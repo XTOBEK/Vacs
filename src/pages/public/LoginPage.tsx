@@ -29,6 +29,11 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
       
       if (userDoc.exists()) {
         const profile = userDoc.data();
+        
+        if (profile.status === 'locked_pending_review' || profile.status === 'permanently_terminated' || profile.verificationStatus === 'BLOCKED') {
+           throw new Error("ACCESS REVOKED: This account has been locked due to clinical protocol violations or deactivation.");
+        }
+
         if (adminOnly && profile.role !== 'ADMIN') {
           throw new Error("This access point is restricted to Super Admins only.");
         }

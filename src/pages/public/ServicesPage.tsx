@@ -1,11 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layout/MainLayout";
 import { motion } from "motion/react";
 import { Stethoscope, Heart, Zap, Shield, ChevronRight, Activity, Users, Clock } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
+import { db } from "../../lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function ServicesPage() {
+  const [cmsData, setCmsData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "cms", "services"), (doc) => {
+      if (doc.exists()) setCmsData(doc.data());
+    });
+    return unsub;
+  }, []);
   const services = [
     {
       title: "Senior Companion Care",
@@ -44,11 +54,11 @@ export default function ServicesPage() {
               className="max-w-2xl"
             >
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-4 block">Our Expertise</span>
-              <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-8 leading-[0.9]">
-                Clinical Oversight. <br /><span className="text-blue-600 italic">Personal</span> Care.
+              <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-8 leading-[0.9] uppercase italic">
+                {cmsData?.headerTitle || "Clinical Oversight."} <br /><span className="text-blue-600 italic">{cmsData?.headerHighlight || "Personal"}</span> Care.
               </h1>
               <p className="text-lg text-slate-500 font-medium leading-relaxed">
-                VACS redefines home care by applying clinical rigor to daily living. Our services are tiered by complexity, ensuring you always have the right level of expertise.
+                {cmsData?.headerSummary || "VACS redefines home care by applying clinical rigor to daily living. Our services are tiered by complexity, ensuring you always have the right level of expertise."}
               </p>
             </motion.div>
             <div className="flex gap-4">

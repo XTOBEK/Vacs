@@ -10,8 +10,14 @@ import {
   Bell,
   Stethoscope,
   ChevronRight,
-  Download
+  Download,
+  Zap,
+  Lock,
+  UserPlus,
+  ShieldCheck
 } from "lucide-react";
+import { auth, db, handleFirestoreError, OperationType } from "../../lib/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
@@ -40,6 +46,28 @@ export default function RNDashboard({ user, onLogout }: any) {
 }
 
 function RNOverview() {
+  const [watchlist, setWatchlist] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    // Query caregivers with 1 or 2 strikes
+    const q = query(
+      collection(db, "users"), 
+      where("compliance_strikes", ">", 0),
+      where("compliance_strikes", "<", 3)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setWatchlist(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (error) => {
+      console.warn("Compliance stream restricted:", error.message);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <div className="space-y-8">
        {/* Hero Oversight Section */}
@@ -179,6 +207,63 @@ function RNOverview() {
                 </div>
                 <div className="absolute -bottom-24 -right-24 text-white/5 opacity-40 transform rotate-12 group-hover:scale-110 transition-transform duration-1000">
                    <Users size={320} />
+                </div>
+             </div>
+
+             {/* Compliance Watchlist Widget */}
+             <div className="bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-8">
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-2">
+                      <ShieldAlert size={14} className="text-amber-500" /> Compliance Watchlist
+                   </h4>
+                   <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-amber-100">
+                      Intervention Required
+                   </span>
+                </div>
+
+                <div className="space-y-4">
+                   {loading ? (
+                      <div className="p-10 text-center animate-pulse text-[10px] font-black text-slate-300 uppercase italic">Scanning Network...</div>
+                   ) : watchlist.length === 0 ? (
+                      <div className="p-12 text-center border-2 border-dashed border-slate-50 rounded-[2rem]">
+                         <ShieldCheck size={40} className="mx-auto text-slate-100 mb-4" />
+                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic leading-relaxed">
+                            All regional caregivers within acceptable <br /> compliance thresholds.
+                         </p>
+                      </div>
+                   ) : (
+                      watchlist.map(agent => (
+                         <div key={agent.id} className="p-5 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between group/item hover:bg-white hover:border-amber-500 hover:shadow-xl transition-all">
+                            <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover/item:text-amber-600 font-bold italic transition-colors">
+                                  {agent.fullName?.[0] || agent.full_name?.[0]}
+                               </div>
+                               <div>
+                                  <p className="text-sm font-black text-slate-900 tracking-tight uppercase italic">{agent.fullName || agent.full_name}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                     {[1, 2, 3].map(i => (
+                                        <div key={i} className={cn(
+                                           "w-2 h-2 rounded-full",
+                                           i <= (agent.compliance_strikes || 0) ? "bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]" : "bg-slate-200"
+                                        )}></div>
+                                     ))}
+                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{agent.compliance_strikes} Strikes</span>
+                                  </div>
+                               </div>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-10 px-6 rounded-xl border border-slate-200 text-[9px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all">
+                               Protocol Review
+                            </Button>
+                         </div>
+                      ))
+                   )}
+                </div>
+                
+                <div className="mt-8 pt-8 border-t border-slate-100 flex items-center gap-3">
+                   <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic leading-relaxed">
+                     Live node tracking caregivers nearing 3-strike lockout.
+                   </p>
                 </div>
              </div>
 

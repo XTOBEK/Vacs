@@ -1,9 +1,19 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layout/MainLayout";
 import { motion } from "motion/react";
 import { ShieldCheck, Users, Activity, Heart } from "lucide-react";
+import { db } from "../../lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function AboutPage() {
+  const [cmsData, setCmsData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "cms", "about"), (doc) => {
+      if (doc.exists()) setCmsData(doc.data());
+    });
+    return unsub;
+  }, []);
   return (
     <MainLayout>
       <section className="pt-40 pb-24 px-6">
@@ -13,12 +23,12 @@ export default function AboutPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto mb-24"
           >
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-4 block">The VACS Protocol</span>
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-8 leading-[0.9]">
-              Pioneering <span className="text-blue-600">Accountable</span> Clinical Care.
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-4 block">{cmsData?.tagline || "The VACS Protocol"}</span>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-8 leading-[0.9] uppercase italic">
+              {cmsData?.title?.split(' ').slice(0, -1).join(' ') || "Pioneering"} <span className="text-blue-600">{cmsData?.title?.split(' ').slice(-1)[0] || "Accountable"}</span> Clinical Care.
             </h1>
             <p className="text-xl text-slate-500 font-medium leading-relaxed">
-              We bridge the gap between medical expertise and compassionate home support through a rigorous RN-led audit system and tiered caregiver training.
+              {cmsData?.description || "We bridge the gap between medical expertise and compassionate home support through a rigorous RN-led audit system and tiered caregiver training."}
             </p>
           </motion.div>
 
@@ -28,7 +38,7 @@ export default function AboutPage() {
               <div className="relative z-10">
                 <Heart className="text-rose-500 mb-6" size={40} />
                 <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight italic uppercase">Our Mission</h3>
-                <p className="text-slate-500 leading-relaxed font-medium">To provide every client with the security of clinical oversight while maintaining the dignity and comfort of their own home.</p>
+                <p className="text-slate-500 leading-relaxed font-medium">{cmsData?.missionText || "To provide every client with the security of clinical oversight while maintaining the dignity and comfort of their own home."}</p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
             </div>
@@ -36,7 +46,7 @@ export default function AboutPage() {
               <div className="relative z-10">
                 <ShieldCheck className="text-blue-400 mb-6" size={40} />
                 <h3 className="text-3xl font-black text-white mb-4 tracking-tight italic uppercase">Clinical Integrity</h3>
-                <p className="text-slate-400 leading-relaxed font-medium">Every care log is digitally signed and audited by a Registered Nurse, ensuring protocol adherence and early detection of physiological changes.</p>
+                <p className="text-slate-400 leading-relaxed font-medium">{cmsData?.integrityText || "Every care log is digitally signed and audited by a Registered Nurse, ensuring protocol adherence and early detection of physiological changes."}</p>
               </div>
               <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mb-16 opacity-50"></div>
             </div>

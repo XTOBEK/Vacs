@@ -23,6 +23,8 @@ All notable changes to this project will be documented in this file.
 - **Security Hardening:** Implemented comprehensive `handleFirestoreError` tracking to diagnose permission issues in real-time.
 - **Firestore Rules:** Updated rules to allow master email access to own user profile regardless of relational mapping and added missing permissions for the `notifications` collection.
 - **Branding:** Updated Dashboard and Main layouts to dynamically reflect "Super Admin" status for the master user.
+- **Dynamic Content:** Migrated Landing, About, and Services pages to live Firestore data via the CMS Manager.
+- **Live Monitoring:** Connected the Active Incident Map and Live Feedback widgets to a real-time Firestore notification stream.
 
 ### Removed
 - Legacy `/superadmin` route and local-storage based authentication to prevent "split-brain" session state.

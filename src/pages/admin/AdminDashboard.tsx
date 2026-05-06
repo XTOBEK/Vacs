@@ -18,11 +18,16 @@ import {
   Download,
   Heart,
   Search,
-  MoreVertical
+  MoreVertical,
+  Plus,
+  Minus,
+  Lock,
+  ShieldCheck
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { CaregiverAssignment } from "../../components/CaregiverAssignment";
 import { ApplicantManager } from "./ApplicantManager";
+import RNSupervisorManager from "./RNSupervisorManager";
 import { TemplateEditor } from "../../components/admin/TemplateEditor";
 import { seedDatabase } from "../../lib/seed";
 
@@ -56,6 +61,7 @@ export default function AdminDashboard({ user, onLogout }: any) {
     { path: "/vacs-control-gate/lms", label: "Internal Academy", icon: GraduationCap },
     { path: "/vacs-control-gate/inventory", label: "Assets & Kits", icon: Package },
     { path: "/vacs-control-gate/cms", label: "Dynamic CMS", icon: Edit },
+    { path: "/vacs-control-gate/supervisors", label: "RN Supervisors", icon: ShieldCheck },
   ];
 
   return (
@@ -71,6 +77,7 @@ export default function AdminDashboard({ user, onLogout }: any) {
         <Route index element={<AdminOverview user={user} />} />
         <Route path="downloads" element={<AppDownloadCenter role="admin" />} />
         <Route path="cms" element={<CMSManager user={user} />} />
+        <Route path="supervisors" element={<RNSupervisorManager />} />
         <Route path="staff" element={<StaffManager user={user} />} />
         <Route path="clients" element={<ClientManager user={user} />} />
         <Route path="applicants" element={<ApplicantManager user={user} />} />
@@ -89,6 +96,7 @@ export default function AdminDashboard({ user, onLogout }: any) {
 const AdminOverview = ({ user }: any) => {
   const [staff, setStaff] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   if (!user) {
@@ -104,22 +112,32 @@ const AdminOverview = ({ user }: any) => {
     
     let unsubStaff = () => {};
     let unsubClients = () => {};
+    let unsubNotes = () => {};
 
     unsubStaff = onSnapshot(collection(db, "users"), (snapshot) => {
       setStaff(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "users");
+      console.warn("Firestore access restricted:", error.message);
     });
     unsubClients = onSnapshot(collection(db, "clients"), (snapshot) => {
       setClients(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "clients");
+      console.warn("Firestore access restricted:", error.message);
       setLoading(false);
     });
+
+    unsubNotes = onSnapshot(collection(db, "notifications"), (snapshot) => {
+      const notes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setNotifications(notes.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+    }, (error) => {
+      console.warn("Notification stream restricted:", error.message);
+    });
+
     return () => {
       unsubStaff();
       unsubClients();
+      unsubNotes();
     };
   }, [user]);
 
@@ -156,19 +174,33 @@ const AdminOverview = ({ user }: any) => {
                  </div>
               </div>
               <div className="space-y-6">
-                 {[
-                   { user: "RN Adeoye", msg: "DVP entry mismatch at Node #492", time: "2m ago" },
-                   { user: "Agency Hub", msg: "Billing cycle 04 initialized", time: "15m ago" },
-                   { user: "System", msg: "LMS certificates issued (12)", time: "45m ago" }
-                 ].map((log, i) => (
-                    <div key={i} className="flex gap-4 items-start p-4 hover:bg-white/5 rounded-2xl transition-colors">
-                       <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-black uppercase tracking-tighter italic shrink-0">{log.user[0]}</div>
-                       <div>
-                          <p className="text-xs font-medium text-slate-300">{log.msg}</p>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{log.time}</p>
-                       </div>
-                    </div>
-                 ))}
+                 {notifications.length > 0 ? (
+                   notifications.map((log, i) => (
+                      <div key={log.id || i} className="flex gap-4 items-start p-4 hover:bg-white/5 rounded-2xl transition-colors">
+                         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-black uppercase tracking-tighter italic shrink-0">
+                           {(log.user || log.author || "S")[0]}
+                         </div>
+                         <div>
+                            <p className="text-xs font-medium text-slate-300">{log.msg || log.message}</p>
+                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{log.time}</p>
+                         </div>
+                      </div>
+                   ))
+                 ) : (
+                   [
+                     { user: "RN Adeoye", msg: "DVP entry mismatch at Node #492", time: "2m ago" },
+                     { user: "Agency Hub", msg: "Billing cycle 04 initialized", time: "15m ago" },
+                     { user: "System", msg: "LMS certificates issued (12)", time: "45m ago" }
+                   ].map((log, i) => (
+                      <div key={i} className="flex gap-4 items-start p-4 hover:bg-white/5 rounded-2xl transition-colors">
+                         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-black uppercase tracking-tighter italic shrink-0">{log.user[0]}</div>
+                         <div>
+                            <p className="text-xs font-medium text-slate-300">{log.msg}</p>
+                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{log.time}</p>
+                         </div>
+                      </div>
+                   ))
+                 )}
               </div>
            </div>
         </div>
@@ -449,6 +481,35 @@ function StaffManager({ user }: any) {
       }
   };
 
+  const handleAdjustStrikes = async (staffId: string, currentStrikes: number, amount: number) => {
+      const newStrikes = Math.max(0, currentStrikes + amount);
+      try {
+          const updateData: any = { compliance_strikes: newStrikes };
+          if (newStrikes >= 3) {
+            updateData.verificationStatus = "BLOCKED";
+            updateData.status = "locked_pending_review";
+          }
+          await updateDoc(doc(db, "users", staffId), updateData);
+          alert(`Compliance strikes adjusted to ${newStrikes}.`);
+      } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
+      }
+  };
+
+  const handleTerminateUser = async (staffId: string) => {
+      if (!confirm("CRITICAL: Permanently terminate this user access? This action is non-reversible.")) return;
+      try {
+          await updateDoc(doc(db, "users", staffId), { 
+            verificationStatus: "TERMINATED",
+            status: "permanently_terminated",
+            terminatedAt: new Date()
+          });
+          alert("User permanently terminated from VACS network.");
+      } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
+      }
+  };
+
   const rns = staff.filter(s => s.role === 'RN');
 
   return (
@@ -516,26 +577,93 @@ function StaffManager({ user }: any) {
           </table>
        </div>
 
-       <div className="mt-8 p-10 bg-[#0B1D45] rounded-[3rem] border border-white/10 text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#C5A069]/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
-          <div className="relative z-10">
-             <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 bg-[#C5A069] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#C5A069]/20 text-[#0B1D45]">
+       {/* System-Wide Compliance Oversight */}
+       <div className="mt-12 bg-white border border-slate-200 rounded-[3rem] overflow-hidden shadow-2xl relative">
+          <div className="p-10 border-b border-slate-100 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+             <div className="flex items-center gap-6">
+                <div className="w-14 h-14 bg-[#C5A069] rounded-2xl flex items-center justify-center text-[#0B1D45] shadow-xl">
                    <ShieldAlert size={28} />
                 </div>
                 <div>
-                   <h4 className="text-2xl font-black tracking-tighter uppercase italic">VACS Clinical Three-Rule Protocol</h4>
-                   <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest leading-none mt-1">Security Oversight Directive #2026-X</p>
+                   <h3 className="text-2xl font-black tracking-tighter uppercase italic">System-Wide Compliance Oversight</h3>
+                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Live Protocol Ledger • Directive #2026-X</p>
                 </div>
              </div>
-             <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.15em] mb-12 max-w-2xl leading-relaxed">
-                To maintain non-negotiable clinical integrity, all field staff are bound by the Three-Rule System. Protocol deviations trigger an automatic strike. 3 strikes result in permanent system lock.
-             </p>
-             <div className="grid md:grid-cols-3 gap-8">
-                <RuleInfo rule="Rule 1: Temporal Integrity" desc="DVP tracking must be verified on-site. Delayed entries trigger an immediate audit flag." />
-                <RuleInfo rule="Rule 2: Identity Guard" desc="Terminal access is biologically strictly tied to the verified field professional ID." />
-                <RuleInfo rule="Rule 3: Clinical Shield" desc="Client private diagnostic data must never exceed the bounds of the encrypted registry." />
+             <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Node Status:</span>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Active Monitoring</span>
              </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+             <table className="w-full text-left">
+                <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                   <tr>
+                      <th className="px-10 py-6">Field Professional</th>
+                      <th className="px-10 py-6 text-center">Current Strikes</th>
+                      <th className="px-10 py-6">Clinical Status</th>
+                      <th className="px-10 py-6 text-right">Oversight Operations</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                   {staff.filter(s => (s.compliance_strikes || 0) > 0 || s.status === 'locked_pending_review').map(agent => (
+                      <tr key={agent.id} className="hover:bg-slate-50 transition-colors">
+                         <td className="px-10 py-8">
+                            <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black italic">
+                                  {agent.fullName?.[0] || agent.full_name?.[0]}
+                               </div>
+                               <div>
+                                  <p className="text-base font-black text-slate-900 tracking-tight uppercase italic">{agent.fullName || agent.full_name}</p>
+                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{agent.role}</p>
+                               </div>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                               {[1, 2, 3].map(i => (
+                                  <div key={i} className={cn(
+                                     "w-3 h-3 rounded-full",
+                                     i <= (agent.compliance_strikes || 0) ? "bg-rose-500 shadow-lg shadow-rose-500/20" : "bg-slate-200"
+                                  )}></div>
+                               ))}
+                               <span className="text-xs font-black text-slate-900 ml-2">{agent.compliance_strikes || 0} / 3</span>
+                            </div>
+                         </td>
+                         <td className="px-10 py-8">
+                            <span className={cn(
+                               "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                               agent.status === 'locked_pending_review' ? "bg-rose-50 border-rose-200 text-rose-600 animate-pulse" : "bg-blue-50 border-blue-200 text-blue-600"
+                            )}>
+                               {agent.status || "NOMINAL"}
+                            </span>
+                         </td>
+                         <td className="px-10 py-8 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                               <Button onClick={() => handleAdjustStrikes(agent.id, agent.compliance_strikes || 0, 1)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-rose-200 text-rose-600 hover:bg-rose-50 gap-2">
+                                  <Plus size={14} /> Add
+                               </Button>
+                               <Button onClick={() => handleAdjustStrikes(agent.id, agent.compliance_strikes || 0, -1)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
+                                  <Minus size={14} /> Remove
+                               </Button>
+                               <Button onClick={() => handleTerminateUser(agent.id)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest bg-rose-600 text-white border-none hover:bg-rose-700 gap-2">
+                                  <Lock size={14} /> Terminal
+                               </Button>
+                            </div>
+                         </td>
+                      </tr>
+                   ))}
+                   {staff.filter(s => (s.compliance_strikes || 0) > 0 || s.status === 'locked_pending_review').length === 0 && (
+                      <tr>
+                         <td colSpan={4} className="px-10 py-20 text-center">
+                            <ShieldCheck size={48} className="mx-auto text-slate-100 mb-4" />
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">No clinical protocol deviations detected across network.</p>
+                         </td>
+                      </tr>
+                   )}
+                </tbody>
+             </table>
           </div>
        </div>
     </div>

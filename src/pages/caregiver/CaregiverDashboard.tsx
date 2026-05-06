@@ -11,6 +11,7 @@ import {
   Award, 
   CreditCard, 
   ShieldAlert,
+  ShieldCheck,
   ChevronRight,
   Clock,
   CheckCircle2,
@@ -197,6 +198,7 @@ function CaregiverHome({ user }: any) {
   const kitStatus = user.kitStatus || 'MISSING';
   const guarantorStatus = user.guarantorStatus || 'PENDING';
   const shiftStatus = user.shiftStatus || 'IDLE';
+  const strikes = user.compliance_strikes || 0;
 
   const fullName = user.fullName || user.full_name || "Agent";
 
@@ -254,6 +256,51 @@ function CaregiverHome({ user }: any) {
              </div>
           </div>
        </div>
+
+       {/* Compliance Strikes Tracking (Protocol Oversight) */}
+       {strikes > 0 && (
+          <div className={cn(
+            "p-8 rounded-[2.5rem] border-2 shadow-2xl relative overflow-hidden mb-10",
+            strikes === 2 ? "bg-rose-50 border-rose-200" : "bg-amber-50 border-amber-200"
+          )}>
+             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                   <div className={cn(
+                     "w-16 h-16 rounded-3xl flex items-center justify-center shadow-xl",
+                     strikes === 2 ? "bg-rose-600 text-white" : "bg-amber-600 text-white"
+                   )}>
+                      <ShieldAlert size={32} />
+                   </div>
+                   <div>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Protocol Warning Ledger</h3>
+                      <p className={cn(
+                        "text-[10px] font-black uppercase tracking-widest mt-1",
+                        strikes === 2 ? "text-rose-600" : "text-amber-600"
+                      )}>
+                        {strikes} of 3 Strikes Recorded • Clinical Oversight Node Active
+                      </p>
+                   </div>
+                </div>
+                <div className="flex gap-2">
+                   {[1, 2, 3].map(i => (
+                      <div key={i} className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all",
+                        i <= strikes 
+                          ? (strikes === 2 ? "bg-rose-600 border-rose-400 text-white shadow-lg" : "bg-amber-600 border-amber-400 text-white shadow-lg")
+                          : "bg-white border-slate-200 text-slate-200"
+                      )}>
+                         <Zap size={20} fill={i <= strikes ? "currentColor" : "none"} />
+                      </div>
+                   ))}
+                </div>
+             </div>
+             <p className="text-slate-500 text-xs font-bold mt-6 leading-relaxed uppercase tracking-wide italic">
+                {strikes === 2 
+                  ? "FINAL WARNING: Your next protocol deviation will result in immediate system lockout and clinical review." 
+                  : "A protocol deviation has been documented. Please review the Three-Rule System to maintain field eligibility."}
+             </p>
+          </div>
+       )}
 
        {/* Active Shift Card */}
        <div className="relative overflow-hidden bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 shadow-sm transition-all hover:shadow-xl hover:border-slate-300">
@@ -321,6 +368,59 @@ function CaregiverHome({ user }: any) {
           </div>
        </div>
        
+       <div className="grid md:grid-cols-2 gap-10">
+          <div className="bg-[#0B1D45] rounded-[3rem] p-10 border border-white/10 text-white relative overflow-hidden shadow-2xl">
+             <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-6">
+                   <div className="w-12 h-12 bg-[#C5A069] rounded-2xl flex items-center justify-center text-[#0B1D45] shadow-xl shadow-[#C5A069]/20">
+                      <ShieldAlert size={24} />
+                    </div>
+                    <div>
+                       <h4 className="text-xl font-black tracking-tighter uppercase italic">Three-Rule Protocol</h4>
+                       <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mt-0.5">Directive #2026-X</p>
+                    </div>
+                 </div>
+                 <div className="space-y-6">
+                    <div className="group">
+                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Rule 1: Temporal Integrity</p>
+                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">DVP tracking verified on-site. Delayed entries trigger immediate audits.</p>
+                    </div>
+                    <div className="group">
+                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Rule 2: Identity Guard</p>
+                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Terminal access strictly tied to biological ID verification.</p>
+                    </div>
+                    <div className="group">
+                       <p className="text-[10px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Rule 3: Clinical Shield</p>
+                       <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Diagnostic data must never exit the encrypted registry bounds.</p>
+                    </div>
+                 </div>
+              </div>
+              <ShieldAlert className="absolute -bottom-10 -right-10 w-48 h-48 text-white/5 -z-0 rotate-12" />
+           </div>
+
+           <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 italic">Professional Compliance</h4>
+              <div className="space-y-6">
+                 <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0"><CheckCircle2 size={18} /></div>
+                    <div>
+                       <p className="text-sm font-black text-slate-900 tracking-tight uppercase italic">Background Audit: CLEARED</p>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Valid until Dec 2026</p>
+                    </div>
+                 </div>
+                 <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0"><ShieldCheck size={18} /></div>
+                    <div>
+                       <p className="text-sm font-black text-slate-900 tracking-tight uppercase italic">Training Progress: 94%</p>
+                       <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                          <div className="w-[94%] h-full bg-blue-600 rounded-full"></div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+
        {/* Referral Section */}
        <div className="bg-slate-900 rounded-[3rem] p-8 md:p-12 text-white relative overflow-hidden border border-slate-800 shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-20 -mr-48 -mt-48"></div>
