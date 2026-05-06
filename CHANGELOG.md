@@ -32,3 +32,13 @@ All notable changes to this project will be documented in this file.
 ### Current Status
 - Master access is fully restored and integrated into the unified VACS Control Gate.
 - Next phase focuses on connecting the Dynamic CMS to live public pages.
+
+## [0.3.0] - 2026-05-06
+
+### Added
+- [ADDED] Generated test data dump for Role-Based Access Control (RBAC) and dashboard validation.
+- [ADDED] Created `VACS_TEST_CREDENTIALS.md` for easy QA testing across Caregiver, Patient, Family, and standard Admin portals.
+- [ADDED] Implemented "VACS Clinical Three-Rule Protocol" conditional rendering logic across all roles.
+- [ADDED] Created "System-Wide Compliance Oversight" for Super Admins to manage protocol deviations.
+- [ADDED] Integrated "Compliance Watchlist" for RN Supervisors to monitor field staff strikes.
+- [ADDED] Added "Service & Privacy Guarantee" for clients with reassignment notification capability.

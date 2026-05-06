@@ -29,7 +29,58 @@ export async function seedDatabase() {
             await setDoc(doc(db, "clients", c.id), c);
         }
 
-        console.log("Database seeded successfully");
+        // Seed Test Users (RBAC Validation)
+        const testUsers = [
+            {
+                uid: "test-caregiver-001",
+                email: "caregiver@vacs.test",
+                fullName: "Standard Caregiver (Test)",
+                role: "CAREGIVER",
+                status: "active",
+                shiftStatus: "IDLE",
+                verificationStatus: "VERIFIED",
+                compliance_strikes: 0
+            },
+            {
+                uid: "test-rn-001",
+                email: "rn@vacs.test",
+                fullName: "Specialized RN (Test)",
+                role: "RN",
+                status: "active",
+                licenseNumber: "RN-TEST-2026",
+                verificationStatus: "VERIFIED"
+            },
+            {
+                uid: "test-client-001",
+                email: "client@vacs.test",
+                fullName: "Patient Olumide (Test)",
+                role: "CLIENT",
+                status: "active",
+                verificationStatus: "VERIFIED"
+            },
+            {
+                uid: "test-family-001",
+                email: "family@vacs.test",
+                fullName: "Family Member (Test)",
+                role: "CLIENT", // Shared dashboard pattern or specialized
+                status: "active",
+                patientId: "VAC-CL-101"
+            },
+            {
+                uid: "test-coordinator-001",
+                email: "coordinator@vacs.test",
+                fullName: "Admin Coordinator (Test)",
+                role: "ADMIN",
+                status: "active",
+                verificationStatus: "VERIFIED"
+            }
+        ];
+
+        for (const user of testUsers) {
+            await setDoc(doc(db, "users", user.uid), user);
+        }
+
+        console.log("Database seeded successfully with RBAC test nodes");
         return true;
     } catch (error) {
         console.error("Seeding failed", error);
