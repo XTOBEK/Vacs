@@ -6,14 +6,16 @@ import {
   onSnapshot, 
   setDoc, 
   doc, 
-  serverTimestamp 
+  serverTimestamp,
+  deleteDoc,
+  updateDoc 
 } from "firebase/firestore";
 import { 
   createUserWithEmailAndPassword,
   getAuth
 } from "firebase/auth";
 import { initializeApp } from "firebase/app";
-import { db } from "../../lib/firebase";
+import { db, handleFirestoreError, OperationType } from "../../lib/firebase";
 import firebaseConfig from "../../../firebase-applet-config.json";
 import { 
   UserPlus, 
@@ -31,6 +33,7 @@ import {
   Loader2
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { cn } from "../../lib/utils";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 
 // Secondary Firebase app to create users without logging out the current admin
@@ -111,6 +114,27 @@ export default function RNSupervisorManager() {
       setMessage({ type: 'error', text: error.message || "Failed to initialize supervisor node." });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteSupervisor = async (id: string) => {
+    if (!confirm("Are you sure you want to PERMANENTLY delete this supervisor node?")) return;
+    try {
+      await deleteDoc(doc(db, "users", id));
+      setMessage({ type: 'success', text: "Supervisor node purged successfully." });
+    } catch (error: any) {
+      handleFirestoreError(error, OperationType.DELETE, `users/${id}`);
+      setMessage({ type: 'error', text: "Purge failed. Insufficient privileges." });
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'deactivated' : 'active';
+    try {
+      await updateDoc(doc(db, "users", id), { status: newStatus });
+      setMessage({ type: 'success', text: `Supervisor status updated to ${newStatus}.` });
+    } catch (error: any) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${id}`);
     }
   };
 
@@ -257,12 +281,20 @@ export default function RNSupervisorManager() {
                             </div>
                           </td>
                           <td className="px-8 py-6 text-right">
-                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button className="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-blue-600 flex items-center justify-center transition-colors">
-                                <Edit2 size={14} />
-                              </button>
-                              <button className="w-8 h-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors">
+                            <div className="flex justify-end gap-2 transition-opacity">
+                              <button 
+                                onClick={() => handleToggleStatus(s.id, s.status)}
+                                className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", s.status === 'active' ? "hover:bg-amber-50 text-slate-400 hover:text-amber-600" : "hover:bg-emerald-50 text-slate-400 hover:text-emerald-600")}
+                                title={s.status === 'active' ? "Deactivate Supervisor" : "Activate Supervisor"}
+                              >
                                 <Ban size={14} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteSupervisor(s.id)}
+                                className="w-8 h-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors"
+                                title="Purge Record"
+                              >
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           </td>

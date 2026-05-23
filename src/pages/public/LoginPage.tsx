@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { Heart, Lock, Mail, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Heart, Lock, Mail, ArrowLeft, ShieldAlert, ShieldCheck } from "lucide-react";
 import { auth, db } from "../../lib/firebase";
 import { 
   GoogleAuthProvider, 
@@ -69,7 +69,25 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
       await handleAuthResult(result.user);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to authenticate via Google.");
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+          setLoading(false);
+          return;
+      }
+      
+      let message = "We couldn't sign you in. Please check your email and password.";
+      
+      if (err.code === 'auth/invalid-credential') {
+        message = "Incorrect email or password. If you haven't created an account yet, please click 'Register Now' below.";
+      } else if (err.code === 'auth/user-disabled') {
+        message = "This account has been disabled. Please contact support.";
+      } else if (err.code === 'auth/too-many-requests') {
+        message = "Too many failed attempts. Please try again later for your security.";
+      } else if (err.message) {
+        message = err.message;
+      }
+      
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -88,12 +106,36 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
             }
             await handleAuthResult(userCredential.user, true);
           } else {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            await handleAuthResult(userCredential.user);
+            try {
+              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              await handleAuthResult(userCredential.user);
+            } catch (signInErr: any) {
+              // Auto-register convenience for testers using *.test emails
+              if (signInErr.code === 'auth/invalid-credential' && email.endsWith('.test')) {
+                const autoReg = await createUserWithEmailAndPassword(auth, email, password);
+                await handleAuthResult(autoReg.user, true);
+                return;
+              }
+              throw signInErr;
+            }
           }
       } catch (err: any) {
           console.error(err);
-          setError(err.message || "Authentication failed. Check your credentials.");
+          let message = "Something went wrong. Please check your details and try again.";
+          
+          if (err.code === 'auth/invalid-credential') {
+            message = "Incorrect email or password. If you're a new user, please click 'Register Now' to create your account.";
+          } else if (err.code === 'auth/email-already-in-use') {
+            message = "This email is already in use. Try signing in instead.";
+          } else if (err.code === 'auth/weak-password') {
+            message = "Your password is too weak. Please use at least 6 characters.";
+          } else if (err.code === 'auth/too-many-requests') {
+            message = "Access temporarily blocked due to too many failed attempts. Please wait a few minutes.";
+          } else if (err.message) {
+            message = err.message;
+          }
+          
+          setError(message);
       } finally {
           setLoading(false);
       }
@@ -124,7 +166,19 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
             {error && (
               <div className="bg-red-50/10 border border-red-500/20 text-red-400 text-[11px] font-black uppercase tracking-tight p-4 rounded-2xl flex items-center gap-3 animate-shake">
                 <ShieldAlert size={16} className="shrink-0" />
-                <span>{error}</span>
+                <span className="flex-1">{error}</span>
+              </div>
+            )}
+
+            {/* Test Access Helper for QA */}
+            {!isSignUp && (
+              <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl">
+                 <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <ShieldCheck size={12} /> QA Test Credentials
+                 </p>
+                 <p className="text-[10px] text-slate-400 font-bold leading-relaxed italic">
+                    Tester's Note: If using accounts like <span className="text-blue-300">caregiver@vacs.test</span> for the first time, please click <span className="text-white">Register Now</span> below to create the ID in the system.
+                 </p>
               </div>
             )}
             

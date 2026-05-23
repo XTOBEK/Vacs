@@ -22,7 +22,8 @@ import {
   Plus,
   Minus,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from "lucide-react";
 import AppDownloadCenter from "../../components/dashboard/AppDownloadCenter";
 import { CaregiverAssignment } from "../../components/CaregiverAssignment";
@@ -56,9 +57,13 @@ export default function AdminDashboard({ user, onLogout }: any) {
     { path: "/vacs-control-gate", label: "Overview", icon: LayoutDashboard },
     { path: "/vacs-control-gate/downloads", label: "App Gateway", icon: Download },
     { path: "/vacs-control-gate/staff", label: "Staff Management", icon: Users },
+    { path: "/vacs-control-gate/applicants", label: "Pending Review", icon: ShieldAlert },
     { path: "/vacs-control-gate/clients", label: "Clients", icon: ShieldAlert },
     { path: "/vacs-control-gate/scheduling", label: "Scheduling", icon: Calendar },
     { path: "/vacs-control-gate/finances", label: "Finances & Payments", icon: CreditCard },
+    { path: "/vacs-control-gate/payroll", label: "Payroll Processing", icon: FileText },
+    { path: "/vacs-control-gate/audit", label: "Audit Logs", icon: FileText },
+    { path: "/vacs-control-gate/access", label: "Access Control", icon: Lock },
     { path: "/vacs-control-gate/franchise", label: "Franchise Mgmt", icon: Package },
     { path: "/vacs-control-gate/invoicing", label: "Invoicing", icon: FileText },
     { path: "/vacs-control-gate/lms", label: "Internal Academy", icon: GraduationCap },
@@ -79,17 +84,20 @@ export default function AdminDashboard({ user, onLogout }: any) {
       <Routes>
         <Route index element={<AdminOverview user={user} />} />
         <Route path="downloads" element={<AppDownloadCenter role="admin" />} />
-        <Route path="cms" element={<CMSManager user={user} />} />
-        <Route path="supervisors" element={<RNSupervisorManager />} />
-        <Route path="staff" element={<StaffManager user={user} />} />
-        <Route path="clients" element={<ClientManager user={user} />} />
         <Route path="applicants" element={<ApplicantManager user={user} />} />
+        <Route path="clients" element={<ClientManager user={user} />} />
+        <Route path="scheduling" element={<SchedulingManager />} />
         <Route path="finances" element={<FinancialManager />} />
+        <Route path="payroll" element={<div className="p-12 text-center text-gray-400">Payroll Processing Module</div>} />
+        <Route path="audit" element={<div className="p-12 text-center text-gray-400">System Audit Logs</div>} />
+        <Route path="access" element={<div className="p-12 text-center text-gray-400">Access Control Module</div>} />
         <Route path="franchise" element={<div className="p-12 text-center text-gray-400">Franchise Management Module</div>} />
         <Route path="invoicing" element={<div className="p-12 text-center text-gray-400">Invoicing Module</div>} />
         <Route path="lms" element={<LMSManager />} />
         <Route path="inventory" element={<div className="p-12 text-center text-gray-400">Asset Management Under Construction</div>} />
-        <Route path="scheduling" element={<SchedulingManager />} />
+        <Route path="cms" element={<CMSManager user={user} />} />
+        <Route path="supervisors" element={<RNSupervisorManager />} />
+        <Route path="staff" element={<StaffManager user={user} />} />
         <Route path="*" element={<div className="p-12 text-center text-gray-400">Section Under Construction</div>} />
       </Routes>
     </DashboardLayout>
@@ -500,7 +508,7 @@ function StaffManager({ user }: any) {
   };
 
   const handleTerminateUser = async (staffId: string) => {
-      if (!confirm("CRITICAL: Permanently terminate this user access? This action is non-reversible.")) return;
+      if (!confirm("CRITICAL: Permanently set this user to TERMINATED? Access will be revoked but record persists for audit.")) return;
       try {
           await updateDoc(doc(db, "users", staffId), { 
             verificationStatus: "TERMINATED",
@@ -510,6 +518,19 @@ function StaffManager({ user }: any) {
           alert("User permanently terminated from VACS network.");
       } catch (error) {
           handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
+      }
+  };
+
+  const handleDeleteStaff = async (staffId: string) => {
+      if (!confirm("DANGER: This will permanently DELETE the user record from the database. This cannot be undone. Proceed?")) return;
+      try {
+          // Note: In a real app we'd also delete the Auth user, but that requires Admin SDK.
+          // For this applet, we handle Firestore deletion and use the login block logic.
+          const { deleteDoc } = await import("firebase/firestore");
+          await deleteDoc(doc(db, "users", staffId));
+          alert("User record purged from registry.");
+      } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, `users/${staffId}`);
       }
   };
 
@@ -573,6 +594,7 @@ function StaffManager({ user }: any) {
                       onAssignSupervisor={handleAssignSupervisor}
                       onUpdateStatus={handleUpdateVerificationStatus}
                       onDeactivate={handleDeactivateStaff}
+                      onDelete={handleDeleteStaff}
                     />
                   ))
                 )}
@@ -650,8 +672,11 @@ function StaffManager({ user }: any) {
                                <Button onClick={() => handleAdjustStrikes(agent.id, agent.compliance_strikes || 0, -1)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
                                   Clear Flag
                                </Button>
-                               <Button onClick={() => handleTerminateUser(agent.id)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest bg-rose-600 text-white border-none hover:bg-rose-700 gap-2">
-                                  Lock Account
+                               <Button onClick={() => handleTerminateUser(agent.id)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-slate-200 text-slate-800 hover:bg-slate-50 gap-2">
+                                  Lock Node
+                               </Button>
+                               <Button onClick={() => handleDeleteStaff(agent.id)} variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest bg-rose-600 text-white border-none hover:bg-rose-700 gap-2">
+                                  Purge Access
                                </Button>
                             </div>
                          </td>
@@ -673,7 +698,7 @@ function StaffManager({ user }: any) {
   );
 }
 
-function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus, onDeactivate }: any) {
+function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus, onDeactivate, onDelete }: any) {
   const fullName = agent.fullName || agent.full_name || "Unknown Agent";
   const initials = fullName.split(' ').map((n: string) => n[0]).join('');
 
@@ -737,12 +762,21 @@ function StaffRow({ agent, rns, onAssignSupervisor, onUpdateStatus, onDeactivate
            )}
        </td>
        <td className="px-2 py-4 md:px-6 text-right">
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 text-right">
              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-blue-600">
                 <Edit size={14} />
              </Button>
-             <Button onClick={() => onDeactivate(agent.id)} variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-red-600" title="Deactivate Agent">
+             <Button onClick={() => onDeactivate(agent.id)} variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-amber-600" title="Deactivate Agent">
                 <ShieldAlert size={14} />
+             </Button>
+             <Button 
+                onClick={() => onDelete(agent.id)} 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 rounded-lg hover:bg-white hover:text-red-600 text-rose-500" 
+                title="Purge Record"
+             >
+                <Trash2 size={14} />
              </Button>
           </div>
        </td>
