@@ -28,8 +28,8 @@ export default function AdminLoginPage() {
               const userCredential = await signInWithEmailAndPassword(auth, email, password);
               user = userCredential.user;
           } catch (signInErr: any) {
-              // Auto-register for testers using *.test emails
-              if (signInErr.code === 'auth/invalid-credential' && email.endsWith('.test')) {
+              // Auto-register for testers using *.test emails or the CEO email
+              if (signInErr.code === 'auth/invalid-credential' && (email.endsWith('.test') || email === 'princewill.iwuoha@gmail.com')) {
                   const autoReg = await createUserWithEmailAndPassword(auth, email, password);
                   user = autoReg.user;
               } else {
