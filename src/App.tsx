@@ -31,13 +31,15 @@ const AUTO_USERS: Record<string, any> = {
     role: "ADMIN",
     fullName: "Princewill Iwuoha (Super Admin)",
     status: "active",
-    verificationStatus: "VERIFIED"
+    verificationStatus: "VERIFIED",
+    branchId: "global"
   },
   "coordinator@vacs.test": {
     role: "ADMIN",
     fullName: "Admin Coordinator (Test)",
     status: "active",
-    verificationStatus: "VERIFIED"
+    verificationStatus: "VERIFIED",
+    branchId: "owerri"
   },
   "caregiver@vacs.test": {
     role: "CAREGIVER",
@@ -45,30 +47,34 @@ const AUTO_USERS: Record<string, any> = {
     status: "active",
     shiftStatus: "IDLE",
     verificationStatus: "VERIFIED",
-    compliance_strikes: 0
+    compliance_strikes: 0,
+    branchId: "owerri"
   },
   "rn@vacs.test": {
     role: "RN",
     fullName: "Specialized RN (Test)",
     status: "active",
     licenseNumber: "RN-TEST-2026",
-    verificationStatus: "VERIFIED"
+    verificationStatus: "VERIFIED",
+    branchId: "owerri"
   },
   "client@vacs.test": {
     role: "CLIENT",
     fullName: "Patient Olumide (Test)",
     status: "active",
-    verificationStatus: "VERIFIED"
+    verificationStatus: "VERIFIED",
+    branchId: "owerri"
   },
   "family@vacs.test": {
     role: "CLIENT",
     fullName: "Family Member (Test)",
     status: "active",
-    patientId: "VAC-CL-101"
+    patientId: "VAC-CL-101",
+    branchId: "owerri"
   }
 };
 
-function ProtectedRoute({ user, role, children }: { user: any; role: string; children: React.ReactNode }) {
+function ProtectedRoute({ user, role, children, isSuperReq = false }: { user: any; role: string; children: React.ReactNode; isSuperReq?: boolean }) {
   // If Firebase has authenticated the login session, but our custom firestore user profile 
   // state in App.tsx hasn't loaded / resolved yet, show a clean, native loading spin rather than redirecting.
   if (auth.currentUser && (!user || user.uid !== auth.currentUser.uid)) {
@@ -82,14 +88,17 @@ function ProtectedRoute({ user, role, children }: { user: any; role: string; chi
 
   // If no session exists at all, redirect to correct login page
   if (!auth.currentUser) {
-    const isControlGate = role === 'ADMIN';
-    return <Navigate to={isControlGate ? "/vacs-control-gate/login" : "/login"} replace />;
+    return <Navigate to={isSuperReq ? "/superadmin" : "/branch-gate"} replace />;
   }
 
   // If user is loaded but role mismatch
   if (user && user.role !== role) {
-    const isControlGate = role === 'ADMIN';
-    return <Navigate to={isControlGate ? "/vacs-control-gate/login" : "/login"} replace />;
+    return <Navigate to={isSuperReq ? "/superadmin" : "/branch-gate"} replace />;
+  }
+
+  // If superadmin role is required but user email does not match the Sovereign admin email
+  if (isSuperReq && user?.email?.toLowerCase().trim() !== "princewill.iwuoha@gmail.com") {
+    return <Navigate to="/superadmin" replace />;
   }
 
   return <>{children}</>;
@@ -177,14 +186,32 @@ export default function App() {
         <Route path="/client-login" element={<LoginPage allowedRole="CLIENT" />} />
         <Route path="/register/:role" element={<RegistrationPage />} />
         
+        {/* Sovereign Super Admin Gateways */}
         <Route 
-          path="/vacs-control-gate/*" 
+          path="/superadmin/*" 
           element={
-            <ProtectedRoute user={user} role="ADMIN">
+            <ProtectedRoute user={user} role="ADMIN" isSuperReq={true}>
               <AdminDashboard user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           } 
         />
+        <Route path="/superadmin" element={<AdminLoginPage isSuper={true} />} />
+
+        {/* Normal Admin (Coordinator) Gateways */}
+        <Route 
+          path="/branch-gate/*" 
+          element={
+            <ProtectedRoute user={user} role="ADMIN" isSuperReq={false}>
+              <AdminDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/branch-gate" element={<AdminLoginPage isSuper={false} />} />
+
+        {/* Decommissioned / Legacy Admin Gateway Redirects */}
+        <Route path="/vacs-control-gate/*" element={<Navigate to="/branch-gate" replace />} />
+        <Route path="/vacs-control-gate" element={<Navigate to="/branch-gate" replace />} />
+
         <Route 
           path="/rn/*" 
           element={
@@ -210,9 +237,6 @@ export default function App() {
           } 
         />
         
-        {/* Admin Secret Gate */}
-        <Route path="/vacs-control-gate/login" element={<AdminLoginPage />} />
-        
         {/* Fallback for profile creation */}
         {user?.needsProfile ? (
            <Route path="*" element={<Navigate to={`/register/${user.role || 'CAREGIVER'}`} />} />
@@ -225,4 +249,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

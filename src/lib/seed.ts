@@ -20,9 +20,9 @@ export async function seedDatabase() {
 
         // Seed Clients
         const clients = [
-            { id: "VAC-CL-101", fullName: "Chief Olumide", tier: "Tier 4 (Palliative)", status: "HOSPITALIZED", health: 15 },
-            { id: "VAC-CL-112", fullName: "Mrs. Adebayo", tier: "Tier 3 (Cognitive)", status: "ACTIVE", health: 85 },
-            { id: "VAC-CL-205", fullName: "Dr. Ibrahim", tier: "Tier 2 (Physical)", status: "ACTIVE", health: 92 }
+            { id: "VAC-CL-101", fullName: "Chief Olumide", tier: "Tier 4 (Palliative)", status: "HOSPITALIZED", health: 15, branchId: "owerri" },
+            { id: "VAC-CL-112", fullName: "Mrs. Adebayo", tier: "Tier 3 (Cognitive)", status: "ACTIVE", health: 85, branchId: "owerri" },
+            { id: "VAC-CL-205", fullName: "Dr. Ibrahim", tier: "Tier 2 (Physical)", status: "ACTIVE", health: 92, branchId: "lagos" }
         ];
 
         for (const c of clients) {
@@ -39,7 +39,8 @@ export async function seedDatabase() {
                 status: "active",
                 shiftStatus: "IDLE",
                 verificationStatus: "VERIFIED",
-                compliance_strikes: 0
+                compliance_strikes: 0,
+                branchId: "owerri"
             },
             {
                 uid: "test-rn-001",
@@ -48,7 +49,8 @@ export async function seedDatabase() {
                 role: "RN",
                 status: "active",
                 licenseNumber: "RN-TEST-2026",
-                verificationStatus: "VERIFIED"
+                verificationStatus: "VERIFIED",
+                branchId: "owerri"
             },
             {
                 uid: "test-client-001",
@@ -56,7 +58,8 @@ export async function seedDatabase() {
                 fullName: "Patient Olumide (Test)",
                 role: "CLIENT",
                 status: "active",
-                verificationStatus: "VERIFIED"
+                verificationStatus: "VERIFIED",
+                branchId: "owerri"
             },
             {
                 uid: "test-family-001",
@@ -64,7 +67,8 @@ export async function seedDatabase() {
                 fullName: "Family Member (Test)",
                 role: "CLIENT", // Shared dashboard pattern or specialized
                 status: "active",
-                patientId: "VAC-CL-101"
+                patientId: "VAC-CL-101",
+                branchId: "owerri"
             },
             {
                 uid: "test-coordinator-001",
@@ -72,7 +76,8 @@ export async function seedDatabase() {
                 fullName: "Admin Coordinator (Test)",
                 role: "ADMIN",
                 status: "active",
-                verificationStatus: "VERIFIED"
+                verificationStatus: "VERIFIED",
+                branchId: "owerri"
             }
         ];
 

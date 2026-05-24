@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { Lock, ShieldAlert, ArrowLeft, Heart, Server, Activity } from "lucide-react";
+import { Lock, ShieldAlert, ArrowLeft, Heart, Server, Activity, Key } from "lucide-react";
 import { auth, db } from "../../lib/firebase";
 import { 
   signInWithEmailAndPassword,
@@ -11,7 +11,11 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import Logo from "../../components/ui/Logo";
 
-export default function AdminLoginPage() {
+interface AdminLoginPageProps {
+  isSuper?: boolean;
+}
+
+export default function AdminLoginPage({ isSuper = false }: AdminLoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
@@ -40,75 +44,88 @@ export default function AdminLoginPage() {
   };
 
   const handleLogin = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      setError("");
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-      const cleanEmail = email.toLowerCase().trim();
+    const cleanEmail = email.toLowerCase().trim();
 
-      try {
-          let user;
-          try {
-              const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-              user = userCredential.user;
-          } catch (signInErr: any) {
-              // Auto-register for testers using *.test emails or the CEO email
-              const isSpecialUser = cleanEmail.endsWith('.test') || cleanEmail === 'princewill.iwuoha@gmail.com';
-              if (signInErr.code === 'auth/invalid-credential' && isSpecialUser) {
-                  try {
-                      const autoReg = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-                      user = autoReg.user;
-                  } catch (regErr: any) {
-                      if (regErr.code === 'auth/email-already-in-use') {
-                          throw signInErr; // original wrong-password/invalid-credential error
-                      }
-                      throw regErr;
-                  }
-              } else {
-                  throw signInErr;
-              }
-          }
-          
-          // Check if user is Admin in Firestore
-          const userRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userRef);
-          const userEmail = user.email?.toLowerCase().trim();
-          
-          if (userDoc.exists() && userDoc.data().role === 'ADMIN') {
-              navigate("/vacs-control-gate");
-          } else if (userEmail === 'princewill.iwuoha@gmail.com' || userEmail === 'coordinator@vacs.test') {
-              // Master owner or chief coordinator override
-              navigate("/vacs-control-gate");
+    try {
+        let user;
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+            user = userCredential.user;
+        } catch (signInErr: any) {
+            // Auto-register for testers using *.test emails or the CEO email
+            const isSpecialUser = cleanEmail.endsWith('.test') || cleanEmail === 'princewill.iwuoha@gmail.com';
+            if (signInErr.code === 'auth/invalid-credential' && isSpecialUser) {
+                try {
+                    const autoReg = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+                    user = autoReg.user;
+                } catch (regErr: any) {
+                    if (regErr.code === 'auth/email-already-in-use') {
+                        throw signInErr; // original wrong-password/invalid-credential error
+                    }
+                    throw regErr;
+                }
+            } else {
+                throw signInErr;
+            }
+        }
+        
+        // Fetch Admin profile in Firestore
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+        const userData = userDoc.exists() ? userDoc.data() : null;
+        const userEmail = user.email?.toLowerCase().trim();
+        
+        if (isSuper) {
+          if (userEmail === 'princewill.iwuoha@gmail.com') {
+              // Direct login for Sovereign admin
+              navigate("/superadmin");
           } else {
               await auth.signOut();
-              throw new Error("Access Denied: This terminal is restricted to authorized VACS Admin personnel only.");
+              throw new Error("Access Denied: Sovereign credentials required for Super Gate.");
           }
-      } catch (err: any) {
-          console.error(err);
-          let message = "Access denied. Please check your admin credentials.";
-          
-          if (err.code === 'auth/invalid-credential') {
-            message = "Incorrect email or password. Only authorized VACS administrators can sign in here.";
-          } else if (err.code === 'auth/user-not-found') {
-            message = "No administrator account found with this email.";
-          } else if (err.code === 'auth/too-many-requests') {
-            message = "Security lock active due to too many failed attempts. Please try again in a few minutes.";
-          } else if (err.message) {
-            message = err.message;
+        } else {
+          // Normal Admin (Coordinator) and test coordinators
+          if (userEmail === 'princewill.iwuoha@gmail.com') {
+              await auth.signOut();
+              throw new Error("Super Admin cannot sign in here. Please use the hidden Super Gate.");
+          } else if (userData?.role === 'ADMIN' || userEmail === 'coordinator@vacs.test') {
+              // Approved Normal Admin
+              navigate("/branch-gate");
+          } else {
+              await auth.signOut();
+              throw new Error("Access Denied: This terminal is restricted to authorized branch coordinators only.");
           }
-          
-          setError(message);
-      } finally {
-          setLoading(false);
-      }
-  }
+        }
+    } catch (err: any) {
+        console.error(err);
+        let message = "Access denied. Please check your admin credentials.";
+        
+        if (err.code === 'auth/invalid-credential') {
+          message = "Incorrect email or password. Verify the portal selection match.";
+        } else if (err.code === 'auth/user-not-found') {
+          message = "No administrator account found with this email.";
+        } else if (err.code === 'auth/too-many-requests') {
+          message = "Security lock active due to too many failed attempts. Please try again in a few minutes.";
+        } else if (err.message) {
+          message = err.message;
+        }
+        
+        setError(message);
+    } finally {
+        setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-500 to-rose-500 opacity-20"></div>
-      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full"></div>
-      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-emerald-600/10 blur-[120px] rounded-full"></div>
+      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${isSuper ? "from-rose-500 via-[#C5A069] to-red-600" : "from-blue-600 via-emerald-500 to-[#C5A069]"} opacity-30`}></div>
+      <div className={`absolute top-1/4 -left-20 w-96 h-96 ${isSuper ? "bg-rose-600/10" : "bg-blue-600/10"} blur-[120px] rounded-full`}></div>
+      <div className={`absolute bottom-1/4 -right-20 w-96 h-96 ${isSuper ? "bg-red-600/10" : "bg-emerald-600/10"} blur-[120px] rounded-full`}></div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="mb-12 text-center">
@@ -118,18 +135,22 @@ export default function AdminLoginPage() {
             <div className="flex justify-center mb-6">
                 <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center shadow-2xl relative">
                     <Logo size="lg" inverted />
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-slate-950 animate-pulse"></div>
+                    <div className={`absolute -top-1 -right-1 w-4 h-4 ${isSuper ? "bg-rose-500" : "bg-emerald-500"} rounded-full border-4 border-slate-950 animate-pulse`}></div>
                 </div>
             </div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">Control Gate</h1>
-            <p className="text-[#C5A069] text-[9px] font-black uppercase tracking-[0.5em] mt-3">Institutional Resource Partition</p>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">
+              {isSuper ? "VACS Sovereign Gate" : "Branch Leader Gate"}
+            </h1>
+            <p className="text-[#C5A069] text-[9px] font-black uppercase tracking-[0.5em] mt-3">
+              {isSuper ? "Sovereign Root Administrator partition" : "Regional Coordinator Access Node"}
+            </p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 p-10 md:p-12 shadow-2xl shadow-black/50">
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest p-4 rounded-2xl flex items-center gap-3 mb-8 animate-shake">
                 <ShieldAlert size={16} className="shrink-0" />
-                <span className="flex-1">{error}</span>
+                <span className="flex-1 text-[10px]">{error}</span>
               </div>
             )}
 
@@ -147,8 +168,8 @@ export default function AdminLoginPage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-white text-sm font-bold focus:ring-2 focus:ring-[#C5A069] outline-none transition-all placeholder:text-slate-700"
-                        placeholder="admin@vacscare.com"
+                        className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-white text-sm font-bold focus:ring-2 focus:ring-[#C5A069] outline-none transition-all placeholder:text-slate-700 font-mono"
+                        placeholder={isSuper ? "sovereign@visitingangels.com" : "coordinator@vacs.test"}
                         required
                     />
                 </div>
@@ -158,7 +179,7 @@ export default function AdminLoginPage() {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-white text-sm font-bold focus:ring-2 focus:ring-[#C5A069] outline-none transition-all placeholder:text-slate-700"
+                        className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-white text-sm font-bold focus:ring-2 focus:ring-[#C5A069] outline-none transition-all placeholder:text-slate-700 font-mono"
                         placeholder="••••••••••••"
                         required
                     />
@@ -178,16 +199,18 @@ export default function AdminLoginPage() {
                 <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full h-14 bg-[#C5A069] hover:bg-[#B49158] text-[#0B1D45] border-none rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#C5A069]/20 transition-all mt-4"
+                    className={`w-full h-14 ${isSuper ? "bg-rose-600 hover:bg-rose-700 text-white" : "bg-[#C5A069] hover:bg-[#B49158] text-[#0B1D45]"} border-none rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl transition-all mt-4`}
                 >
-                    {loading ? "Verifying..." : "Initialize Session"}
+                    {loading ? "Verifying Keys..." : "Initialize Session"}
                 </Button>
             </form>
 
             <div className="mt-10 pt-8 border-t border-white/5 flex flex-col items-center gap-6">
                 <div className="flex items-center gap-3 text-slate-500">
-                    <Activity size={14} className="text-emerald-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest">Network Status: Optimized</span>
+                    <Activity size={14} className={isSuper ? "text-rose-500" : "text-emerald-500"} />
+                    <span className="text-[9px] font-black uppercase tracking-widest">
+                      SYSTEM INTEGRITY: SECURE
+                    </span>
                 </div>
                 <p className="text-[9px] text-center text-slate-600 font-bold uppercase tracking-widest leading-relaxed">
                     Unauthorized access attempts are logged <br /> and reported to VACS Compliance.

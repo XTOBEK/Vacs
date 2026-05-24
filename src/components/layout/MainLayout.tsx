@@ -81,7 +81,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Link to="/staff-login" className="hover:text-blue-600 transition-colors text-slate-900">Staff</Link>
             <Link to="/client-login" className="hover:text-blue-600 transition-colors text-slate-900">Client</Link>
             {user?.email === "princewill.iwuoha@gmail.com" && (
-              <Link to="/vacs-control-gate" className="text-rose-500 hover:text-rose-600 transition-colors">Admin Portal</Link>
+              <Link to="/superadmin" className="text-rose-500 hover:text-rose-600 transition-colors">Admin Portal</Link>
             )}
             <Link to="/register/client">
               <Button size="sm" className="rounded-full shadow-xl shadow-blue-500/10 h-10 px-6">Enroll Now</Button>
@@ -117,7 +117,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <Link to="/staff-login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Staff Login</Link>
                 <Link to="/client-login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-slate-900">Client Login</Link>
                 {user?.email === "princewill.iwuoha@gmail.com" && (
-                  <Link to="/vacs-control-gate" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-rose-500">Super Admin Portal</Link>
+                  <Link to="/superadmin" onClick={() => setMobileMenuOpen(false)} className="text-xs font-black uppercase tracking-widest text-rose-500">Super Admin Portal</Link>
                 )}
                 <Link to="/register/client" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full rounded-full h-12 shadow-md">Enroll Now</Button>
@@ -171,7 +171,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-8 leading-none">Intelligence</h4>
             <div className="flex flex-col gap-4">
                <Link to="/login" className="text-xs font-black uppercase tracking-widest text-slate-100 bg-slate-800 px-6 py-3 rounded-full text-center hover:bg-slate-700 transition-colors">System Login</Link>
-               <Link to="/vacs-control-gate/login" className="text-[9px] font-black uppercase tracking-[0.3em] text-[#C5A069] bg-[#C5A069]/5 border border-[#C5A069]/20 px-6 py-3 rounded-full text-center hover:bg-[#C5A069]/10 transition-colors">Control Gate Login</Link>
+               <Link to="/branch-gate" className="text-[9px] font-black uppercase tracking-[0.3em] text-[#C5A069] bg-[#C5A069]/5 border border-[#C5A069]/20 px-6 py-3 rounded-full text-center hover:bg-[#C5A069]/10 transition-colors">Coordinator Portal</Link>
                <Link to="/contact" className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-700 hover:text-blue-500 text-center transition-colors">Support Center</Link>
             </div>
           </div>

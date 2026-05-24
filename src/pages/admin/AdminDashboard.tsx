@@ -16,6 +16,7 @@ import {
   doc,
   updateDoc,
   addDoc,
+  orderBy,
 } from "firebase/firestore";
 import {
   LayoutDashboard,
@@ -47,6 +48,7 @@ import SchedulingManager from "./SchedulingManager";
 import LMSManager from "./LMSManager";
 import FinancialManager from "./FinancialManager";
 import CeoTodoList from "../../components/admin/CeoTodoList";
+import { logAudit } from "../../lib/audit";
 
 const StaffLoginRequired = ({ title, description, icon: Icon }: any) => (
   <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">
@@ -69,69 +71,102 @@ const StaffLoginRequired = ({ title, description, icon: Icon }: any) => (
   </div>
 );
 
-export default function AdminDashboard({ user, onLogout }: any) {
-  const menuItems = [
-    { path: "/vacs-control-gate", label: "Overview", icon: LayoutDashboard },
+export default function AdminDashboard({ user, onLogout, isSuper: propIsSuper }: any) {
+  const isSuper = propIsSuper ?? (user?.email?.toLowerCase().trim() === "princewill.iwuoha@gmail.com");
+  const branchId = user?.branchId || (user?.email === "coordinator@vacs.test" ? "owerri" : "lagos");
+
+  // Silent Audit Trail for Admin Dashboard loaded
+  useEffect(() => {
+    if (user) {
+      logAudit(
+        user.email || "unknown_admin",
+        "AUTH_SESSION_INITIALIZED",
+        `Dashboard session loaded. Partition: ${branchId.toUpperCase()}. Super Admin: ${isSuper}`,
+        branchId
+      );
+    }
+  }, [user]);
+
+  const basePath = isSuper ? "/superadmin" : "/branch-gate";
+
+  const allMenuItems = [
+    { path: basePath, label: "Overview", icon: LayoutDashboard },
     {
-      path: "/vacs-control-gate/downloads",
+      path: `${basePath}/downloads`,
       label: "App Gateway",
       icon: Download,
     },
     {
-      path: "/vacs-control-gate/staff",
+      path: `${basePath}/staff`,
       label: "Staff Management",
       icon: Users,
     },
     {
-      path: "/vacs-control-gate/applicants",
+      path: `${basePath}/applicants`,
       label: "Pending Review",
       icon: ShieldAlert,
     },
-    { path: "/vacs-control-gate/clients", label: "Clients", icon: ShieldAlert },
+    { path: `${basePath}/clients`, label: "Clients", icon: ShieldAlert },
     {
-      path: "/vacs-control-gate/scheduling",
+      path: `${basePath}/scheduling`,
       label: "Scheduling",
       icon: Calendar,
     },
     {
-      path: "/vacs-control-gate/finances",
+      path: `${basePath}/finances`,
       label: "Finances & Payments",
       icon: CreditCard,
     },
     {
-      path: "/vacs-control-gate/payroll",
+      path: `${basePath}/payroll`,
       label: "Payroll Processing",
       icon: FileText,
     },
-    { path: "/vacs-control-gate/audit", label: "Audit Logs", icon: FileText },
-    { path: "/vacs-control-gate/access", label: "Access Control", icon: Lock },
+    { path: `${basePath}/audit`, label: "Audit Logs", icon: FileText },
+    { path: `${basePath}/access`, label: "Access Control", icon: Lock },
     {
-      path: "/vacs-control-gate/franchise",
+      path: `${basePath}/franchise`,
       label: "Franchise Mgmt",
       icon: Package,
     },
     {
-      path: "/vacs-control-gate/invoicing",
+      path: `${basePath}/invoicing`,
       label: "Invoicing",
       icon: FileText,
     },
     {
-      path: "/vacs-control-gate/lms",
+      path: `${basePath}/lms`,
       label: "Internal Academy",
       icon: GraduationCap,
     },
     {
-      path: "/vacs-control-gate/inventory",
+      path: `${basePath}/inventory`,
       label: "Assets & Kits",
       icon: Package,
     },
-    { path: "/vacs-control-gate/cms", label: "Dynamic CMS", icon: Edit },
+    { path: `${basePath}/cms`, label: "Dynamic CMS", icon: Edit },
     {
-      path: "/vacs-control-gate/supervisors",
+      path: `${basePath}/supervisors`,
       label: "RN Supervisors",
       icon: ShieldCheck,
     },
   ];
+
+  // Siloed access: No access to website content cms, access controllers, franchise specs, or system audits
+  const menuItems = allMenuItems.filter((item) => {
+    if (!isSuper) {
+      const matchPath = item.path.replace(basePath, "");
+      if (
+        matchPath === "/cms" ||
+        matchPath === "/access" ||
+        matchPath === "/franchise" ||
+        matchPath === "/audit"
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   return (
     <DashboardLayout user={user} onLogout={onLogout} menuItems={menuItems}>
@@ -143,7 +178,7 @@ export default function AdminDashboard({ user, onLogout }: any) {
             records.
           </span>
           <Link
-            to="/vacs-control-gate/login"
+            to={isSuper ? "/superadmin" : "/branch-gate"}
             className="bg-white text-amber-600 px-4 py-1 rounded-full hover:bg-white/90 transition-colors"
           >
             Sign In Now
@@ -151,12 +186,12 @@ export default function AdminDashboard({ user, onLogout }: any) {
         </div>
       )}
       <Routes>
-        <Route index element={<AdminOverview user={user} />} />
+        <Route index element={<AdminOverview user={user} isSuper={isSuper} branchId={branchId} />} />
         <Route path="downloads" element={<AppDownloadCenter role="admin" />} />
         <Route path="applicants" element={<ApplicantManager user={user} />} />
-        <Route path="clients" element={<ClientManager user={user} />} />
+        <Route path="clients" element={<ClientManager user={user} isSuper={isSuper} branchId={branchId} />} />
         <Route path="scheduling" element={<SchedulingManager />} />
-        <Route path="finances" element={<FinancialManager />} />
+        <Route path="finances" element={<FinancialManager isSuper={isSuper} adminEmail={user?.email || ""} branchId={branchId} />} />
         <Route
           path="payroll"
           element={
@@ -168,25 +203,41 @@ export default function AdminDashboard({ user, onLogout }: any) {
         <Route
           path="audit"
           element={
-            <div className="p-12 text-center text-gray-400">
-              System Audit Logs
-            </div>
+            isSuper ? (
+              <AuditLogsViewer isSuper={isSuper} />
+            ) : (
+              <div className="p-12 text-center text-red-500 font-black uppercase tracking-[0.15em] border border-dashed border-red-200 rounded-[2rem] bg-red-50/20 text-xs">
+                Access Denied: Unrestricted Sovereign Audit-Authorization Credentials Required
+              </div>
+            )
           }
         />
         <Route
           path="access"
           element={
-            <div className="p-12 text-center text-gray-400">
-              Access Control Module
-            </div>
+            isSuper ? (
+              <div className="p-12 text-center text-gray-400">
+                Access Control Module
+              </div>
+            ) : (
+              <div className="p-12 text-center text-red-500 font-black uppercase tracking-[0.15em] border border-dashed border-red-200 rounded-[2rem] bg-red-50/20 text-xs">
+                Access Denied: Role Escalation Protocol Engaged
+              </div>
+            )
           }
         />
         <Route
           path="franchise"
           element={
-            <div className="p-12 text-center text-gray-400">
-              Franchise Management Module
-            </div>
+            isSuper ? (
+              <div className="p-12 text-center text-gray-400">
+                Franchise Management Module
+              </div>
+            ) : (
+              <div className="p-12 text-center text-red-500 font-black uppercase tracking-[0.15em] border border-dashed border-red-200 rounded-[2rem] bg-red-50/20 text-xs">
+                Access Denied: Enterprise Branch Oversight is Restricted
+              </div>
+            )
           }
         />
         <Route
@@ -206,9 +257,20 @@ export default function AdminDashboard({ user, onLogout }: any) {
             </div>
           }
         />
-        <Route path="cms" element={<CMSManager user={user} />} />
+        <Route 
+          path="cms" 
+          element={
+            isSuper ? (
+              <CMSManager user={user} />
+            ) : (
+              <div className="p-12 text-center text-red-500 font-black uppercase tracking-[0.15em] border border-dashed border-red-200 rounded-[2rem] bg-red-50/20 text-xs">
+                Access Denied: Web Content Creation Privileges Siloed
+              </div>
+            )
+          } 
+        />
         <Route path="supervisors" element={<RNSupervisorManager />} />
-        <Route path="staff" element={<StaffManager user={user} />} />
+        <Route path="staff" element={<StaffManager user={user} isSuper={isSuper} branchId={branchId} />} />
         <Route
           path="*"
           element={
@@ -222,11 +284,15 @@ export default function AdminDashboard({ user, onLogout }: any) {
   );
 }
 
-const AdminOverview = ({ user }: any) => {
+const AdminOverview = ({ user, isSuper = false, branchId = "owerri" }: any) => {
   const [staff, setStaff] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const displayedStaff = isSuper ? staff : staff.filter((s: any) => s.branchId === branchId);
+  const displayedClients = isSuper ? clients : clients.filter((c: any) => c.branchId === branchId);
+  const displayedNotifications = isSuper ? notifications : notifications.filter((n: any) => n.branchId === branchId || !n.branchId);
 
   const [ceoTasks, setCeoTasks] = useState<any[]>(() => {
     const saved = localStorage.getItem("vacs_ceo_tasks");
@@ -355,21 +421,21 @@ const AdminOverview = ({ user }: any) => {
   }, [user]);
 
   const pendingKitVerifications =
-    staff.length > 0
-      ? staff.filter((s) => s.kitStatus !== "VERIFIED").length
-      : 12;
+    displayedStaff.length > 0
+      ? displayedStaff.filter((s) => s.kitStatus !== "VERIFIED").length
+      : isSuper ? 12 : 2;
 
   return (
     <div className="space-y-12">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Total Caregivers"
-          value={staff.length > 0 ? staff.length : "480"}
+          value={displayedStaff.length > 0 ? displayedStaff.length : (isSuper ? "480" : "24")}
           trend="Active"
         />
         <StatCard
           title="Registered Clients"
-          value={clients.length}
+          value={displayedClients.length > 0 ? displayedClients.length : (isSuper ? "2" : "1")}
           trend="Total"
         />
         <StatCard
@@ -412,8 +478,8 @@ const AdminOverview = ({ user }: any) => {
             </div>
           </div>
           <div className="space-y-6">
-            {notifications.length > 0
-              ? notifications.map((log, i) => (
+            {displayedNotifications.length > 0
+              ? displayedNotifications.map((log, i) => (
                   <div
                     key={log.id || i}
                     className="flex gap-4 items-start p-4 hover:bg-white/5 rounded-2xl transition-colors"
@@ -826,7 +892,7 @@ function ChevronRight({ size = 20, className = "" }: any) {
   );
 }
 
-function StaffManager({ user }: any) {
+function StaffManager({ user, isSuper = false, branchId = "owerri" }: any) {
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -865,6 +931,8 @@ function StaffManager({ user }: any) {
     return () => unsubscribe();
   }, [user]);
 
+  const displayedStaff = isSuper ? staff : staff.filter((s: any) => s.branchId === branchId);
+
   const handleAddStaff = async () => {
     const email = prompt("Enter caregiver email:");
     if (!email) return;
@@ -875,8 +943,10 @@ function StaffManager({ user }: any) {
         role: "Field Agent",
         verificationStatus: "PENDING",
         kitStatus: "MISSING",
+        branchId: branchId,
         createdAt: new Date(),
       });
+      logAudit(user?.email || "unknown", "STAFF_RECORD_CREATED", `Approved caregiver profile for ${email} in branch: ${branchId.toUpperCase()}`, branchId);
       alert("Caregiver record created successfully.");
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, "users");
@@ -889,6 +959,7 @@ function StaffManager({ user }: any) {
       await updateDoc(doc(db, "users", staffId), {
         verificationStatus: "BLOCKED",
       });
+      logAudit(user?.email || "unknown", "STAFF_RECORD_DEACTIVATED", `Deactivated caregiver ${staffId}`, branchId);
       alert("Caregiver deactivated.");
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${staffId}`);
@@ -1048,7 +1119,7 @@ function StaffManager({ user }: any) {
                     ></td>
                   </tr>
                 ))
-            ) : staff.length === 0 ? (
+            ) : displayedStaff.length === 0 ? (
               <tr>
                 <td
                   colSpan={5}
@@ -1058,7 +1129,7 @@ function StaffManager({ user }: any) {
                 </td>
               </tr>
             ) : (
-              staff.map((agent) => (
+              displayedStaff.map((agent) => (
                 <StaffRow
                   key={agent.id}
                   agent={agent}
@@ -1112,7 +1183,7 @@ function StaffManager({ user }: any) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {staff
+              {displayedStaff
                 .filter(
                   (s) =>
                     (s.compliance_strikes || 0) > 0 ||
@@ -1484,7 +1555,7 @@ function CMSField({ label, defaultValue, type = "text", onChange }: any) {
   );
 }
 
-function ClientManager({ user }: any) {
+function ClientManager({ user, isSuper = false, branchId = "owerri" }: any) {
   const [activeTab, setActiveTab] = React.useState("registry");
   const [clients, setClients] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -1509,20 +1580,18 @@ function ClientManager({ user }: any) {
     let unsubStaff: () => void = () => {};
 
     // --- Clients ---
-    if (auth.currentUser?.email === "princewill.iwuoha@gmail.com") {
-      const qClients = query(collection(db, "clients"));
-      unsubClients = onSnapshot(
-        qClients,
-        (snapshot) => {
-          setClients(
-            snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-          );
-        },
-        (error) => {
-          handleFirestoreError(error, OperationType.LIST, "clients");
-        },
-      );
-    }
+    const qClients = query(collection(db, "clients"));
+    unsubClients = onSnapshot(
+      qClients,
+      (snapshot) => {
+        setClients(
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        );
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, "clients");
+      },
+    );
 
     // --- Staff ---
     const qStaff = query(collection(db, "users"));
@@ -1542,7 +1611,9 @@ function ClientManager({ user }: any) {
       unsubClients();
       unsubStaff();
     };
-  }, []);
+  }, [user]);
+
+  const filteredClients = isSuper ? clients : clients.filter((c: any) => c.branchId === branchId);
 
   if (loading) return <div>Loading...</div>;
 
@@ -1590,12 +1661,12 @@ function ClientManager({ user }: any) {
               <div className="p-20 text-center animate-pulse text-slate-400 text-[10px] font-black uppercase tracking-widest">
                 Scanning Registry...
               </div>
-            ) : clients.length === 0 ? (
+            ) : filteredClients.length === 0 ? (
               <div className="p-20 bg-white border border-slate-200 rounded-[3rem] text-center text-slate-400 text-[10px] font-black uppercase tracking-widest italic">
                 Node Registry Empty
               </div>
             ) : (
-              clients.map((client, i) => (
+              filteredClients.map((client, i) => (
                 <div
                   key={i}
                   className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm group hover:border-blue-500 transition-all"
@@ -1674,6 +1745,15 @@ function ClientManager({ user }: any) {
                       <Button
                         variant="outline"
                         className="h-10 px-6 rounded-xl text-[9px] font-black uppercase tracking-widest border-slate-200"
+                        onClick={() => {
+                          logAudit(
+                            user?.email || "unknown",
+                            "CLIENT_LOGS_VIEWED",
+                            `Examined clinical history logs for patient: ${client.fullName || client.name} (${client.id})`,
+                            branchId
+                          );
+                          alert(`SECURE ACCESS ACTIVE: Silently logging clinical file audit inspection for patient: ${client.fullName || client.name}`);
+                        }}
                       >
                         View Logs
                       </Button>
@@ -2082,6 +2162,114 @@ function InventoryManager({ user }: any) {
             size={160}
             className="absolute -bottom-10 -right-10 text-white/5 -z-0 group-hover:scale-110 transition-transform"
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditLogsViewer({ isSuper }: { isSuper: boolean }) {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "audit_logs"), orderBy("timestamp", "desc"));
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        setLogs(snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })));
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Audit log subscription failed:", error);
+        setLoading(false);
+      }
+    );
+    return unsub;
+  }, []);
+
+  if (!isSuper) {
+    return (
+      <div className="p-12 text-center text-red-500 font-bold uppercase tracking-widest bg-red-50 rounded-2xl">
+        Access Denied: Super Admin Authority Required
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">
+          SOVEREIGN IMMUTABLE AUDIT TRAIL
+        </h2>
+        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+          Cryptographically aligned node monitoring log database
+        </p>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm">
+        <div className="p-8 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between">
+          <h3 className="text-sm font-black uppercase tracking-widest italic animate-pulse">
+            Ledger Audit Stream
+          </h3>
+          <span className="text-[9px] font-black px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full uppercase tracking-widest border border-emerald-500/20">
+            SECURE REPOSITORY LIVE
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+              <tr>
+                <th className="px-8 py-5">Timestamp</th>
+                <th className="px-8 py-5">Staff Identity</th>
+                <th className="px-8 py-5">Action Type</th>
+                <th className="px-8 py-5">Branch Silo</th>
+                <th className="px-8 py-5">Log Entry Parameters</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-8 py-20 text-center text-slate-400 animate-pulse">
+                    SCANNING LEDGER BACKPLANE...
+                  </td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-8 py-20 text-center text-slate-400 italic">
+                    NO REGISTERED TRANSGREGATIONS RECORDED IN SILO
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => {
+                  const dateStr = log.timestamp?.seconds
+                    ? new Date(log.timestamp.seconds * 1000).toLocaleString("en-GB")
+                    : "STAMP_PENDING";
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-5 text-slate-500 whitespace-nowrap">{dateStr}</td>
+                      <td className="px-8 py-5 text-slate-900 font-black">{log.admin}</td>
+                      <td className="px-8 py-5">
+                        <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[9px] font-bold border border-slate-300 uppercase">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold border border-blue-100 uppercase">
+                          {log.branchId}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-slate-600 max-w-md break-words">{log.details}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

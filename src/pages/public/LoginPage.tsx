@@ -62,13 +62,15 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
         }
         
         // Redirect based on role
-        if (profile.role === 'ADMIN') navigate("/vacs-control-gate");
+        if (profile.role === 'ADMIN') {
+          navigate(profile.email?.toLowerCase().trim() === 'princewill.iwuoha@gmail.com' ? "/superadmin" : "/branch-gate");
+        }
         else if (profile.role === 'RN') navigate("/rn");
         else if (profile.role === 'CAREGIVER') navigate("/dashboard");
         else if (profile.role === 'CLIENT') navigate("/client");
       } else if (user.email === 'princewill.iwuoha@gmail.com') {
         // Owner is auto-admin
-        navigate("/vacs-control-gate");
+        navigate("/superadmin");
       } else {
         if (isNewUser) {
            // For new users, we'll send them to completing their profile

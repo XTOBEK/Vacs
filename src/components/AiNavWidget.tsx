@@ -39,8 +39,8 @@ const AiNavWidget = () => {
     setMessages(prev => [...prev, {text: command, isUser: true}]);
     const cmd = command.toLowerCase();
     
-    if (cmd.includes("dashboard")) navigate('/vacs-control-gate');
-    else if (cmd.includes("staff")) navigate('/vacs-control-gate/staff');
+    if (cmd.includes("dashboard")) navigate('/branch-gate');
+    else if (cmd.includes("staff")) navigate('/branch-gate/staff');
     else if (cmd.includes("home")) navigate('/');
     else {
         const response = getSopResponse(cmd);
