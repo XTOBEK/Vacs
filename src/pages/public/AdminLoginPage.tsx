@@ -5,7 +5,8 @@ import { Lock, ShieldAlert, ArrowLeft, Heart, Server, Activity } from "lucide-re
 import { auth, db } from "../../lib/firebase";
 import { 
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import Logo from "../../components/ui/Logo";
@@ -15,7 +16,28 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError("Please key in your Credential Node (Email) first to receive a security reset signal.");
+      return;
+    }
+    setResetLoading(true);
+    setResetSent(false);
+    setError("");
+    try {
+      await sendPasswordResetEmail(auth, email.toLowerCase().trim());
+      setResetSent(true);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to transmit password reset signal.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -111,7 +133,12 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-
+            {resetSent && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest p-4 rounded-xl mb-8 flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                <span>Security key reset signal transmitted! Check your email inbox.</span>
+              </div>
+            )}
 
             <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-1">
@@ -136,6 +163,18 @@ export default function AdminLoginPage() {
                         required
                     />
                 </div>
+
+                <div className="flex justify-end px-2">
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="text-[9px] font-black uppercase tracking-widest text-[#C5A069]/60 hover:text-[#C5A069] transition-colors cursor-pointer"
+                    disabled={resetLoading}
+                  >
+                    {resetLoading ? "Transmitting Reset Request..." : "Reset Security Key / Forgot Key?"}
+                  </button>
+                </div>
+
                 <Button 
                     type="submit" 
                     disabled={loading}

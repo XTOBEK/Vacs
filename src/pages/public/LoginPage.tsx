@@ -6,7 +6,8 @@ import { auth, db } from "../../lib/firebase";
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -19,7 +20,28 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError("Please key in your Email address first to request a password reset.");
+      return;
+    }
+    setResetLoading(true);
+    setResetSent(false);
+    setError("");
+    try {
+      await sendPasswordResetEmail(auth, email.toLowerCase().trim());
+      setResetSent(true);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to send password-reset email.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleAuthResult = async (user: any, isNewUser = false) => {
       // Fetch user profile from Firestore
@@ -145,7 +167,12 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
               </div>
             )}
 
-
+            {resetSent && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest p-4 rounded-xl mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                <span>Security key reset link sent! Check your email inbox.</span>
+              </div>
+            )}
             
             <form onSubmit={handleFormSubmit} className="space-y-4">
                 {isSignUp && (
@@ -174,6 +201,20 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
                     className="w-full p-4 bg-white/10 rounded-2xl border border-white/20 focus:ring-2 focus:ring-[#C5A069] text-white text-sm font-bold placeholder:text-slate-500"
                     required
                 />
+
+                {!isSignUp && (
+                  <div className="flex justify-end px-2">
+                    <button
+                      type="button"
+                      onClick={handlePasswordReset}
+                      className="text-[9px] font-black uppercase tracking-widest text-[#C5A069]/60 hover:text-[#C5A069] transition-colors cursor-pointer"
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? "Transmitting Reset Link..." : "Forgot Security Key?"}
+                    </button>
+                  </div>
+                )}
+
                 <Button type="submit" className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-[#C5A069]/10 rounded-full bg-[#C5A069] text-[#0B1D45] hover:bg-[#B49158]" disabled={loading}>
                     {loading ? "Decrypting..." : (isSignUp ? "Generate Professional ID" : "Verify & Sign In")}
                 </Button>

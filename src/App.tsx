@@ -4,7 +4,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { auth, db, handleFirestoreError, OperationType } from "./lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -67,6 +67,33 @@ const AUTO_USERS: Record<string, any> = {
     patientId: "VAC-CL-101"
   }
 };
+
+function ProtectedRoute({ user, role, children }: { user: any; role: string; children: React.ReactNode }) {
+  // If Firebase has authenticated the login session, but our custom firestore user profile 
+  // state in App.tsx hasn't loaded / resolved yet, show a clean, native loading spin rather than redirecting.
+  if (auth.currentUser && (!user || user.uid !== auth.currentUser.uid)) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-950 text-white">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Verifying Clinical Clearance...</p>
+      </div>
+    );
+  }
+
+  // If no session exists at all, redirect to correct login page
+  if (!auth.currentUser) {
+    const isControlGate = role === 'ADMIN';
+    return <Navigate to={isControlGate ? "/vacs-control-gate/login" : "/login"} replace />;
+  }
+
+  // If user is loaded but role mismatch
+  if (user && user.role !== role) {
+    const isControlGate = role === 'ADMIN';
+    return <Navigate to={isControlGate ? "/vacs-control-gate/login" : "/login"} replace />;
+  }
+
+  return <>{children}</>;
+}
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -152,19 +179,35 @@ export default function App() {
         
         <Route 
           path="/vacs-control-gate/*" 
-          element={user?.role === 'ADMIN' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/vacs-control-gate/login" />} 
+          element={
+            <ProtectedRoute user={user} role="ADMIN">
+              <AdminDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
         />
         <Route 
           path="/rn/*" 
-          element={user?.role === 'RN' ? <RNDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+          element={
+            <ProtectedRoute user={user} role="RN">
+              <RNDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
         />
         <Route 
           path="/dashboard/*" 
-          element={user?.role === 'CAREGIVER' ? <CaregiverDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+          element={
+            <ProtectedRoute user={user} role="CAREGIVER">
+              <CaregiverDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
         />
         <Route 
           path="/client/*" 
-          element={user?.role === 'CLIENT' ? <ClientDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+          element={
+            <ProtectedRoute user={user} role="CLIENT">
+              <ClientDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
         />
         
         {/* Admin Secret Gate */}
