@@ -80,7 +80,8 @@ export default function AdminLoginPage({ isSuper = false }: AdminLoginPageProps)
         const userEmail = user.email?.toLowerCase().trim();
         
         if (isSuper) {
-          if (userEmail === 'princewill.iwuoha@gmail.com') {
+          const checkSuper = userEmail === 'princewill.iwuoha@gmail.com' || userData?.isSuper === true;
+          if (checkSuper) {
               // Direct login for Sovereign admin
               navigate("/superadmin");
           } else {
@@ -89,12 +90,13 @@ export default function AdminLoginPage({ isSuper = false }: AdminLoginPageProps)
           }
         } else {
           // Normal Admin (Coordinator) and test coordinators
-          if (userEmail === 'princewill.iwuoha@gmail.com') {
+          const isSuperCheck = userEmail === 'princewill.iwuoha@gmail.com' || userData?.isSuper === true;
+          if (isSuperCheck) {
               await auth.signOut();
               throw new Error("Super Admin cannot sign in here. Please use the hidden Super Gate.");
           } else if (userData?.role === 'ADMIN' || userEmail === 'coordinator@vacs.test') {
               // Approved Normal Admin
-              navigate("/branch-gate");
+              navigate("/admin");
           } else {
               await auth.signOut();
               throw new Error("Access Denied: This terminal is restricted to authorized branch coordinators only.");

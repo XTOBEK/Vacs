@@ -19,6 +19,7 @@ import FAQPage from "./pages/public/FAQPage";
 import CareersPage from "./pages/public/Careers";
 import ApplicationForm from "./pages/public/ApplicationForm";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import AdminLoginPage from "./pages/public/AdminLoginPage";
 import NotFound from "./pages/public/NotFound";
 import RNDashboard from "./pages/rn/RNDashboard";
@@ -88,16 +89,17 @@ function ProtectedRoute({ user, role, children, isSuperReq = false }: { user: an
 
   // If no session exists at all, redirect to correct login page
   if (!auth.currentUser) {
-    return <Navigate to={isSuperReq ? "/superadmin" : "/branch-gate"} replace />;
+    return <Navigate to={isSuperReq ? "/superadmin" : "/admin"} replace />;
   }
 
   // If user is loaded but role mismatch
   if (user && user.role !== role) {
-    return <Navigate to={isSuperReq ? "/superadmin" : "/branch-gate"} replace />;
+    return <Navigate to={isSuperReq ? "/superadmin" : "/admin"} replace />;
   }
 
-  // If superadmin role is required but user email does not match the Sovereign admin email
-  if (isSuperReq && user?.email?.toLowerCase().trim() !== "princewill.iwuoha@gmail.com") {
+  // If superadmin role is required but user email/flag does not verify Sovereign privilege
+  const isUserSuper = user?.email?.toLowerCase().trim() === "princewill.iwuoha@gmail.com" || user?.isSuper === true;
+  if (isSuperReq && !isUserSuper) {
     return <Navigate to="/superadmin" replace />;
   }
 
@@ -191,7 +193,7 @@ export default function App() {
           path="/superadmin/*" 
           element={
             <ProtectedRoute user={user} role="ADMIN" isSuperReq={true}>
-              <AdminDashboard user={user} onLogout={handleLogout} />
+              <SuperAdminDashboard user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           } 
         />
@@ -199,19 +201,22 @@ export default function App() {
 
         {/* Normal Admin (Coordinator) Gateways */}
         <Route 
-          path="/branch-gate/*" 
+          path="/admin/*" 
           element={
             <ProtectedRoute user={user} role="ADMIN" isSuperReq={false}>
               <AdminDashboard user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           } 
         />
-        <Route path="/branch-gate" element={<AdminLoginPage isSuper={false} />} />
+        <Route path="/admin" element={<AdminLoginPage isSuper={false} />} />
 
         {/* Decommissioned / Legacy Admin Gateway Redirects */}
-        <Route path="/vacs-control-gate/*" element={<Navigate to="/branch-gate" replace />} />
-        <Route path="/vacs-control-gate" element={<Navigate to="/branch-gate" replace />} />
+        <Route path="/branch-gate/*" element={<Navigate to="/admin" replace />} />
+        <Route path="/branch-gate" element={<Navigate to="/admin" replace />} />
+        <Route path="/vacs-control-gate/*" element={<Navigate to="/admin" replace />} />
+        <Route path="/vacs-control-gate" element={<Navigate to="/admin" replace />} />
 
+        {/* Registered Nurse Gateways (supports both casing as requested) */}
         <Route 
           path="/rn/*" 
           element={
@@ -221,13 +226,27 @@ export default function App() {
           } 
         />
         <Route 
-          path="/dashboard/*" 
+          path="/RN/*" 
+          element={
+            <ProtectedRoute user={user} role="RN">
+              <RNDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Caregivers & Home Care Aides */}
+        <Route 
+          path="/caregiver/*" 
           element={
             <ProtectedRoute user={user} role="CAREGIVER">
               <CaregiverDashboard user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           } 
         />
+        <Route path="/dashboard/*" element={<Navigate to="/caregiver" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/caregiver" replace />} />
+
+        {/* Clients & Families */}
         <Route 
           path="/client/*" 
           element={

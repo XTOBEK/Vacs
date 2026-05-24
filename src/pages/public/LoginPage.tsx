@@ -63,10 +63,11 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
         
         // Redirect based on role
         if (profile.role === 'ADMIN') {
-          navigate(profile.email?.toLowerCase().trim() === 'princewill.iwuoha@gmail.com' ? "/superadmin" : "/branch-gate");
+          const isSuper = profile.email?.toLowerCase().trim() === 'princewill.iwuoha@gmail.com' || profile.isSuper === true;
+          navigate(isSuper ? "/superadmin" : "/admin");
         }
-        else if (profile.role === 'RN') navigate("/rn");
-        else if (profile.role === 'CAREGIVER') navigate("/dashboard");
+        else if (profile.role === 'RN') navigate("/RN");
+        else if (profile.role === 'CAREGIVER') navigate("/caregiver");
         else if (profile.role === 'CLIENT') navigate("/client");
       } else if (user.email === 'princewill.iwuoha@gmail.com') {
         // Owner is auto-admin

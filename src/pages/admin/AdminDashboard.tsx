@@ -89,7 +89,7 @@ export default function AdminDashboard({ user, onLogout, isSuper: propIsSuper }:
     }
   }, [user]);
 
-  const basePath = isSuper ? "/superadmin" : "/branch-gate";
+  const basePath = isSuper ? "/superadmin" : "/admin";
 
   const allMenuItems = [
     { path: basePath, label: "Overview", icon: LayoutDashboard },
@@ -180,7 +180,7 @@ export default function AdminDashboard({ user, onLogout, isSuper: propIsSuper }:
             records.
           </span>
           <Link
-            to={isSuper ? "/superadmin" : "/branch-gate"}
+            to={isSuper ? "/superadmin" : "/admin"}
             className="bg-white text-amber-600 px-4 py-1 rounded-full hover:bg-white/90 transition-colors"
           >
             Sign In Now
