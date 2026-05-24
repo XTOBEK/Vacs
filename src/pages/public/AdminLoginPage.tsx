@@ -22,16 +22,26 @@ export default function AdminLoginPage() {
       setLoading(true);
       setError("");
 
+      const cleanEmail = email.toLowerCase().trim();
+
       try {
           let user;
           try {
-              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
               user = userCredential.user;
           } catch (signInErr: any) {
               // Auto-register for testers using *.test emails or the CEO email
-              if (signInErr.code === 'auth/invalid-credential' && (email.endsWith('.test') || email === 'princewill.iwuoha@gmail.com')) {
-                  const autoReg = await createUserWithEmailAndPassword(auth, email, password);
-                  user = autoReg.user;
+              const isSpecialUser = cleanEmail.endsWith('.test') || cleanEmail === 'princewill.iwuoha@gmail.com';
+              if (signInErr.code === 'auth/invalid-credential' && isSpecialUser) {
+                  try {
+                      const autoReg = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+                      user = autoReg.user;
+                  } catch (regErr: any) {
+                      if (regErr.code === 'auth/email-already-in-use') {
+                          throw signInErr; // original wrong-password/invalid-credential error
+                      }
+                      throw regErr;
+                  }
               } else {
                   throw signInErr;
               }
@@ -40,10 +50,11 @@ export default function AdminLoginPage() {
           // Check if user is Admin in Firestore
           const userRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userRef);
+          const userEmail = user.email?.toLowerCase().trim();
           
           if (userDoc.exists() && userDoc.data().role === 'ADMIN') {
               navigate("/vacs-control-gate");
-          } else if (user.email === 'princewill.iwuoha@gmail.com' || user.email === 'coordinator@vacs.test') {
+          } else if (userEmail === 'princewill.iwuoha@gmail.com' || userEmail === 'coordinator@vacs.test') {
               // Master owner or chief coordinator override
               navigate("/vacs-control-gate");
           } else {

@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { auth, db, handleFirestoreError, OperationType } from "./lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import LandingPage from "./pages/public/LandingPage";
 import LoginPage from "./pages/public/LoginPage";
 import RegistrationPage from "./pages/public/RegistrationPage";
@@ -26,6 +26,48 @@ import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import AiNavWidget from "./components/AiNavWidget";
 
+const AUTO_USERS: Record<string, any> = {
+  "princewill.iwuoha@gmail.com": {
+    role: "ADMIN",
+    fullName: "Princewill Iwuoha (Super Admin)",
+    status: "active",
+    verificationStatus: "VERIFIED"
+  },
+  "coordinator@vacs.test": {
+    role: "ADMIN",
+    fullName: "Admin Coordinator (Test)",
+    status: "active",
+    verificationStatus: "VERIFIED"
+  },
+  "caregiver@vacs.test": {
+    role: "CAREGIVER",
+    fullName: "Standard Caregiver (Test)",
+    status: "active",
+    shiftStatus: "IDLE",
+    verificationStatus: "VERIFIED",
+    compliance_strikes: 0
+  },
+  "rn@vacs.test": {
+    role: "RN",
+    fullName: "Specialized RN (Test)",
+    status: "active",
+    licenseNumber: "RN-TEST-2026",
+    verificationStatus: "VERIFIED"
+  },
+  "client@vacs.test": {
+    role: "CLIENT",
+    fullName: "Patient Olumide (Test)",
+    status: "active",
+    verificationStatus: "VERIFIED"
+  },
+  "family@vacs.test": {
+    role: "CLIENT",
+    fullName: "Family Member (Test)",
+    status: "active",
+    patientId: "VAC-CL-101"
+  }
+};
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -40,20 +82,30 @@ export default function App() {
           
           if (userDoc.exists()) {
             const data = userDoc.data();
-            // Permanent fix: auto-promote to ADMIN if the email matches
-            if (firebaseUser.email === 'princewill.iwuoha@gmail.com' && data.role !== 'ADMIN') {
+            const normEmail = firebaseUser.email?.toLowerCase().trim();
+            const isSpecialAdmin = normEmail === 'princewill.iwuoha@gmail.com' || normEmail === 'coordinator@vacs.test';
+            if (isSpecialAdmin && data.role !== 'ADMIN') {
               const { updateDoc } = await import("firebase/firestore");
               await updateDoc(userRef, { role: 'ADMIN' });
               setUser({ ...firebaseUser, ...data, role: 'ADMIN' });
             } else {
               setUser({ ...firebaseUser, ...data });
             }
-          } else if (firebaseUser.email === 'princewill.iwuoha@gmail.com') {
-            // First time login for admin - create basic profile or mock it
-            setUser({ ...firebaseUser, role: 'ADMIN' });
           } else {
-            // User exists in Auth but not in Firestore - might be registering
-            setUser({ ...firebaseUser, needsProfile: true });
+            const normEmail = firebaseUser.email?.toLowerCase().trim();
+            if (normEmail && AUTO_USERS[normEmail]) {
+              const seedData = {
+                uid: firebaseUser.uid,
+                email: normEmail,
+                ...AUTO_USERS[normEmail],
+                createdAt: new Date().toISOString()
+              };
+              await setDoc(userRef, seedData);
+              setUser({ ...firebaseUser, ...seedData });
+            } else {
+              // User exists in Auth but not in Firestore - might be registering
+              setUser({ ...firebaseUser, needsProfile: true });
+            }
           }
         } catch (error) {
           handleFirestoreError(error, OperationType.GET, "users/" + firebaseUser.uid);

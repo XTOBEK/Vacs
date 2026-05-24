@@ -64,23 +64,32 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
       setLoading(true);
       setError("");
 
+      const cleanEmail = email.toLowerCase().trim();
+
       try {
           if (isSignUp) {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             if (fullName) {
               await updateProfile(userCredential.user, { displayName: fullName });
             }
             await handleAuthResult(userCredential.user, true);
           } else {
             try {
-              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
               await handleAuthResult(userCredential.user);
             } catch (signInErr: any) {
               // Auto-register convenience for testers using *.test emails
-              if (signInErr.code === 'auth/invalid-credential' && email.endsWith('.test')) {
-                const autoReg = await createUserWithEmailAndPassword(auth, email, password);
-                await handleAuthResult(autoReg.user, true);
-                return;
+              if (signInErr.code === 'auth/invalid-credential' && cleanEmail.endsWith('.test')) {
+                try {
+                  const autoReg = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+                  await handleAuthResult(autoReg.user, true);
+                  return;
+                } catch (regErr: any) {
+                  if (regErr.code === 'auth/email-already-in-use') {
+                    throw signInErr; // original wrong-password/invalid-credential error
+                  }
+                  throw regErr;
+                }
               }
               throw signInErr;
             }
