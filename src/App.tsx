@@ -121,8 +121,14 @@ export default function App() {
           if (userDoc.exists()) {
             const data = userDoc.data();
             const normEmail = firebaseUser.email?.toLowerCase().trim();
-            const isSpecialAdmin = normEmail === 'princewill.iwuoha@gmail.com' || normEmail === 'coordinator@vacs.test';
-            if (isSpecialAdmin && data.role !== 'ADMIN') {
+            if (normEmail === 'princewill.iwuoha@gmail.com') {
+              const needsUpdate = data.role !== 'ADMIN' || data.isSuper !== true;
+              if (needsUpdate) {
+                const { updateDoc } = await import("firebase/firestore");
+                await updateDoc(userRef, { role: 'ADMIN', isSuper: true });
+              }
+              setUser({ ...firebaseUser, ...data, role: 'ADMIN', isSuper: true });
+            } else if (normEmail === 'coordinator@vacs.test' && data.role !== 'ADMIN') {
               const { updateDoc } = await import("firebase/firestore");
               await updateDoc(userRef, { role: 'ADMIN' });
               setUser({ ...firebaseUser, ...data, role: 'ADMIN' });
@@ -136,6 +142,7 @@ export default function App() {
                 uid: firebaseUser.uid,
                 email: normEmail,
                 ...AUTO_USERS[normEmail],
+                isSuper: normEmail === 'princewill.iwuoha@gmail.com',
                 createdAt: new Date().toISOString()
               };
               await setDoc(userRef, seedData);
