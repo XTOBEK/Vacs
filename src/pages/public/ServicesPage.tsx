@@ -7,6 +7,16 @@ import { Link } from "react-router-dom";
 import { db } from "../../lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
+const IconMap: Record<string, React.ReactNode> = {
+  Users: <Users className="text-blue-500" />,
+  Zap: <Zap className="text-emerald-500" />,
+  Activity: <Activity className="text-rose-500" />,
+  Shield: <Shield className="text-amber-500" />,
+  Stethoscope: <Stethoscope className="text-blue-500" />,
+  Heart: <Heart className="text-red-500" />,
+  Clock: <Clock className="text-indigo-500" />,
+};
+
 export default function ServicesPage() {
   const [cmsData, setCmsData] = useState<any>(null);
 
@@ -16,32 +26,38 @@ export default function ServicesPage() {
     });
     return unsub;
   }, []);
-  const services = [
+
+  const defaultServices = [
     {
       title: "Senior Companion Care",
       desc: "Clinical-grade non-medical support for elderly residents, focusing on social engagement and safe mobilization.",
-      icon: <Users className="text-blue-500" />,
+      icon: "Users",
       features: ["Meal Preparation", "Medication Reminders", "Social Outings", "Light Housekeeping"]
     },
     {
       title: "Post-Op Recovery",
       desc: "Specialized protocol-driven support for clients transitioning from hospital to home after elective or emergency surgery.",
-      icon: <Zap className="text-emerald-500" />,
+      icon: "Zap",
       features: ["Dressing Change Support", "Vital Monitoring", "Exercise Assistance", "Progress Auditing"]
     },
     {
       title: "Chronic Condition Sync",
       desc: "Active physiological tracking for long-term health management, verified daily by Registered Nurses.",
-      icon: <Activity className="text-rose-500" />,
+      icon: "Activity",
       features: ["Glucose Monitoring", "BP Tracking", "Symptom Logging", "RN Oversight"]
     },
     {
       title: "Dementia Support",
       desc: "Advanced Tier II caregiver deployment specialized in cognitive support and memory preservation protocols.",
-      icon: <Shield className="text-amber-500" />,
+      icon: "Shield",
       features: ["Safe Environment Audit", "Cognitive Drills", "Respite for Families", "Behavioral Tracking"]
     }
   ];
+
+  // Map database entries to match display structure, filtering by status === true
+  const services = cmsData?.list 
+    ? cmsData.list.filter((s: any) => s.status !== false)
+    : defaultServices;
 
   return (
     <MainLayout>
@@ -100,6 +116,17 @@ export default function ServicesPage() {
 }
 
 function ServiceCard({ title, desc, icon, features, index }: any) {
+  const isUrl = typeof icon === "string" && (icon.startsWith("http") || icon.includes("/"));
+  const iconElement = isUrl ? (
+    <img src={icon} alt={title} className="w-8 h-8 object-contain" referrerPolicy="no-referrer" />
+  ) : typeof icon === "string" ? (
+    IconMap[icon] || IconMap["Users"]
+  ) : icon ? (
+    React.cloneElement(icon, { size: 32 })
+  ) : (
+    IconMap["Users"]
+  );
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 30 }}
@@ -108,8 +135,8 @@ function ServiceCard({ title, desc, icon, features, index }: any) {
       transition={{ delay: index * 0.1 }}
       className="bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:border-blue-100 transition-all group flex flex-col h-full"
     >
-      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-10 border border-slate-100 group-hover:bg-blue-50 group-hover:scale-110 transition-all">
-         {React.cloneElement(icon, { size: 32 })}
+      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-10 border border-slate-100 group-hover:bg-blue-50 group-hover:scale-110 transition-all text-blue-600">
+         {iconElement}
       </div>
       <div className="flex-1">
         <h3 className="text-3xl font-black text-slate-900 mb-6 tracking-tight italic uppercase">{title}</h3>

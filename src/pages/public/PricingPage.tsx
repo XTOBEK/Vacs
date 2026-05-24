@@ -1,12 +1,23 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layout/MainLayout";
 import { motion } from "motion/react";
 import { CheckCircle2, ShieldCheck, Zap, Activity, Users, Star } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
+import { db } from "../../lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function PricingPage() {
-  const plans = [
+  const [cmsData, setCmsData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "cms", "plans"), (doc) => {
+      if (doc.exists()) setCmsData(doc.data());
+    });
+    return unsub;
+  }, []);
+
+  const defaultPlans = [
     {
       name: "Tier I: Essential",
       price: "$250",
@@ -56,6 +67,10 @@ export default function PricingPage() {
       btnText: "Select Specialty"
     }
   ];
+
+  const plans = cmsData?.list
+    ? cmsData.list.filter((p: any) => p.status !== false)
+    : defaultPlans;
 
   return (
     <MainLayout>

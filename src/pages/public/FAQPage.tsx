@@ -1,32 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layout/MainLayout";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Minus, Stethoscope, ShieldCheck, Zap, Heart } from "lucide-react";
+import { Plus, Minus, Stethoscope, ShieldCheck, Zap, Heart, MessageSquare } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { db } from "../../lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+
+const IconMap: Record<string, React.ReactNode> = {
+  General: <MessageSquare size={20} className="text-blue-500" />,
+  Medical: <Stethoscope size={20} className="text-emerald-500" />,
+  Billing: <Zap size={20} className="text-amber-500" />,
+  Standard: <Heart size={20} className="text-rose-500" />
+};
 
 export default function FAQPage() {
-  const faqs = [
+  const [cmsData, setCmsData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "cms", "faq"), (doc) => {
+      if (doc.exists()) setCmsData(doc.data());
+    });
+    return unsub;
+  }, []);
+
+  const defaultFaqs = [
     {
       question: "What is VACS and how is it different from standard agencies?",
       answer: "Visiting Angels Caregivers Solutions (VACS) is unique because every care plan is clinically overseen by a Registered Nurse. We bridge the gap between simple supportive care and medical oversight, ensuring clinical integrity in non-medical home settings.",
-      icon: <Stethoscope size={20} className="text-blue-500" />
+      category: "Medical"
     },
     {
       question: "What are the 4 Tiers of service?",
       answer: "We categorize care into four distinct tiers: Tier 1 (Standard/Companionship - ₦1,600/hr), Tier 2 (Physical/ADL - ₦1,900/hr), Tier 3 (Cognitive/Neuro - ₦2,200/hr), and Tier 4 (Palliative/End-of-Life - ₦2,500/hr). Each tier requires specific caregiver certifications.",
-      icon: <Zap size={20} className="text-emerald-500" />
+      category: "Billing"
     },
     {
       question: "Do you provide medical treatments like injections or IVs?",
       answer: "No. VACS is a non-medical agency. While our caregivers are certfied and RN-overseen, they strictly provide supportive care, medication reminders, and ADL assistance. For medical procedures, we coordinate with your primary healthcare provider.",
-      icon: <ShieldCheck size={20} className="text-rose-500" />
+      category: "General"
     },
     {
       question: "How do you verify your caregivers?",
       answer: "Every caregiver (Field Professional) goes through a 3-stage verification: Background Check, Clinical Assessment, and Medical Kit Audit (BP monitor & gait belt). Higher tier caregivers must also complete modules in our Internal Academy.",
-      icon: <Heart size={20} className="text-amber-500" />
+      category: "Standard"
     }
   ];
+
+  const faqs = cmsData?.list && cmsData.list.length > 0
+    ? [...cmsData.list].sort((a: any, b: any) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+    : defaultFaqs;
 
   return (
     <MainLayout>
@@ -58,8 +80,9 @@ export default function FAQPage() {
   );
 }
 
-function FAQItem({ question, answer, icon }: any) {
+function FAQItem({ question, answer, category, icon }: any) {
   const [isOpen, setIsOpen] = useState(false);
+  const matchedIcon = icon || IconMap[category] || IconMap["General"];
 
   return (
     <div 
@@ -75,7 +98,7 @@ function FAQItem({ question, answer, icon }: any) {
             "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
             isOpen ? "bg-blue-600 text-white rotate-6" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
           )}>
-            {icon}
+            {matchedIcon}
           </div>
           <h3 className={cn(
             "text-lg md:text-xl font-black tracking-tight transition-colors",

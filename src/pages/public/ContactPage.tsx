@@ -1,10 +1,26 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layout/MainLayout";
 import { motion } from "motion/react";
 import { MapPin, Phone, Mail, Clock, ShieldCheck, Send } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { db } from "../../lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function ContactPage() {
+  const [cmsData, setCmsData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "cms", "contact"), (doc) => {
+      if (doc.exists()) setCmsData(doc.data());
+    });
+    return unsub;
+  }, []);
+
+  const primaryPhone = cmsData?.phone || cmsData?.primary_phone || "+234 (0) 803 123 4567";
+  const generalEmail = cmsData?.email || cmsData?.general_email || "admissions@vacs-registry.io";
+  const physicalAddress = cmsData?.address || cmsData?.physical_address || "Lekki Phase 1, Lagos, Nigeria";
+  const emergencyPhone = cmsData?.emergency || cmsData?.emergency_phone || "+234 (0) 900 VACS EMERGENCY";
+
   return (
     <MainLayout>
       <section className="pt-40 pb-24 px-6 overflow-hidden">
@@ -23,9 +39,10 @@ export default function ContactPage() {
                 </p>
 
                 <div className="space-y-10">
-                   <ContactItem icon={<Phone />} label="Global Inquiry Line" value="+234 (0) 803 123 4567" />
-                   <ContactItem icon={<Mail />} label="Clinical Correspondence" value="admissions@vacs-registry.io" />
-                   <ContactItem icon={<MapPin />} label="Logistics Headquarters" value="Lekki Phase 1, Lagos, Nigeria" />
+                   <ContactItem icon={<Phone />} label="Global Inquiry Line" value={primaryPhone} />
+                   <ContactItem icon={<Phone className="text-red-500" />} label="24/7 Clinical Support Line" value={emergencyPhone} />
+                   <ContactItem icon={<Mail />} label="Clinical Correspondence" value={generalEmail} />
+                   <ContactItem icon={<MapPin />} label="Logistics Headquarters" value={physicalAddress} />
                    <div className="pt-8 border-t border-slate-200">
                       <div className="flex items-center gap-4 text-emerald-600">
                          <Clock size={20} className="animate-pulse" />

@@ -17,6 +17,8 @@ import {
   updateDoc,
   addDoc,
   orderBy,
+  setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import {
   LayoutDashboard,
@@ -555,6 +557,36 @@ function CMSManager({ user }: any) {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // CRUD Sub-states
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+
+  // Form states
+  const [serviceForm, setServiceForm] = useState({
+    title: "",
+    desc: "",
+    icon: "Users",
+    features: "",
+    status: true
+  });
+
+  const [faqForm, setFaqForm] = useState({
+    question: "",
+    answer: "",
+    category: "General",
+    sort_order: 0
+  });
+
+  const [planForm, setPlanForm] = useState({
+    name: "",
+    price: "",
+    period: "",
+    desc: "",
+    features: "",
+    popular: false,
+    status: true
+  });
+
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -583,8 +615,8 @@ function CMSManager({ user }: any) {
   const handleSave = async (segment: string, data: any) => {
     setIsSaving(true);
     try {
-      await updateDoc(doc(db, "cms", segment), data);
-      alert("CMS Registry Synchronized successfully.");
+      await setDoc(doc(db, "cms", segment), data, { merge: true });
+      alert("Website content saved successfully.");
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `cms/${segment}`);
     } finally {
@@ -599,25 +631,296 @@ function CMSManager({ user }: any) {
       </div>
     );
 
+  // Fallbacks
+  const aboutData = cmsData.about || {
+    title: "Pioneering Accountable Clinical Care.",
+    tagline: "The VACS Protocol",
+    description: "We bridge the gap between medical expertise and compassionate home support through a rigorous RN-led audit system and tiered caregiver training.",
+    missionText: "To shift the landscape of caregiving through rigorous accountability, certified tools, and continuous clinical oversight.",
+    integrityText: "Every caregiver report is checked by a resident RN, assuring complete and unimpeachable service telemetry.",
+    bannerUrl: ""
+  };
+
+  const servicesList = cmsData.services?.list || [
+    {
+      title: "Senior Companion Care",
+      desc: "Clinical-grade non-medical support for elderly residents, focusing on social engagement and safe mobilization.",
+      icon: "Users",
+      features: ["Meal Preparation", "Medication Reminders", "Social Outings", "Light Housekeeping"],
+      status: true
+    },
+    {
+      title: "Post-Op Recovery",
+      desc: "Specialized protocol-driven support for clients transitioning from hospital to home after elective or emergency surgery.",
+      icon: "Zap",
+      features: ["Dressing Change Support", "Vital Monitoring", "Exercise Assistance", "Progress Auditing"],
+      status: true
+    },
+    {
+      title: "Chronic Condition Sync",
+      desc: "Active physiological tracking for long-term health management, verified daily by Registered Nurses.",
+      icon: "Activity",
+      features: ["Glucose Monitoring", "BP Tracking", "Symptom Logging", "RN Oversight"],
+      status: true
+    },
+    {
+      title: "Dementia Support",
+      desc: "Advanced Tier II caregiver deployment specialized in cognitive support and memory preservation protocols.",
+      icon: "Shield",
+      features: ["Safe Environment Audit", "Cognitive Drills", "Respite for Families", "Behavioral Tracking"],
+      status: true
+    }
+  ];
+
+  const faqList = cmsData.faq?.list || [
+    {
+      question: "What is VACS and how is it different from standard agencies?",
+      answer: "Visiting Angels Caregivers Solutions (VACS) is unique because every care plan is clinically overseen by a Registered Nurse. We bridge the gap between simple supportive care and medical oversight, ensuring clinical integrity in non-medical home settings.",
+      category: "Medical",
+      sort_order: 1
+    },
+    {
+      question: "What are the 4 Tiers of service?",
+      answer: "We categorize care into four distinct tiers: Tier 1 (Standard/Companionship - ₦1,600/hr), Tier 2 (Physical/ADL - ₦1,900/hr), Tier 3 (Cognitive/Neuro - ₦2,200/hr), and Tier 4 (Palliative/End-of-Life - ₦2,500/hr). Each tier requires specific caregiver certifications.",
+      category: "Billing",
+      sort_order: 2
+    },
+    {
+      question: "Do you provide medical treatments like injections or IVs?",
+      answer: "No. VACS is a non-medical agency. While our caregivers are certfied and RN-overseen, they strictly provide supportive care, medication reminders, and ADL assistance. For medical procedures, we coordinate with your primary healthcare provider.",
+      category: "General",
+      sort_order: 3
+    },
+    {
+      question: "How do you verify your caregivers?",
+      answer: "Every caregiver (Field Professional) goes through a 3-stage verification: Background Check, Clinical Assessment, and Medical Kit Audit (BP monitor & gait belt). Higher tier caregivers must also complete modules in our Internal Academy.",
+      category: "Standard",
+      sort_order: 4
+    }
+  ];
+
+  const plansList = cmsData.plans?.list || [
+    {
+      name: "Tier I: Essential",
+      price: "$250",
+      period: "per 4hr session",
+      desc: "Compassionate companionship and daily support for healthy seniors.",
+      features: ["LGA Verified Caregiver", "Weekly RN Log Review", "Basic ADL Support", "Digital Check-In/Out", "Social Enrichment"],
+      popular: false,
+      status: true
+    },
+    {
+      name: "Tier II: clinical",
+      price: "$480",
+      period: "per 8hr session",
+      desc: "High-intensity support for chronic condition management and post-op care.",
+      features: ["Advanced Academy Graduate", "Daily RN Audit Protocol", "Vital Sign Monitoring", "Wound Support Assist", "Medication Verification", "Emergency Escalation Path"],
+      popular: true,
+      status: true
+    },
+    {
+      name: "Tier III: Specialty",
+      price: "$950",
+      period: "full 24hr cycle",
+      desc: "Round-the-clock specialized care for complex neurological or mobility needs.",
+      features: ["Double-Staff Deployment", "Real-time Telemetry Sync", "C-Level RN Liaison", "Cognitive Drill Support", "Custom Nutritional Prep", "Family Portal Analytics"],
+      popular: false,
+      status: true
+    }
+  ];
+
+  const contactData = cmsData.contact || {
+    phone: "+234 (0) 803 123 4567",
+    email: "admissions@vacs-registry.io",
+    address: "Lekki Phase 1, Lagos, Nigeria",
+    emergency: "+234 (0) 900 VACS EMERGENCY",
+    mapsUrl: ""
+  };
+
+  // CRUD functions
+  const handleAddNewService = () => {
+    setServiceForm({ title: "", desc: "", icon: "Users", features: "", status: true });
+    setEditingItemIndex(null);
+    setIsAddingNew(true);
+  };
+
+  const handleEditService = (index: number) => {
+    const item = servicesList[index];
+    setServiceForm({
+      title: item.title,
+      desc: item.desc,
+      icon: item.icon || "Users",
+      features: Array.isArray(item.features) ? item.features.join(", ") : "",
+      status: item.status !== false
+    });
+    setEditingItemIndex(index);
+    setIsAddingNew(false);
+  };
+
+  const handleDeleteService = async (index: number) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
+    const list = [...servicesList];
+    list.splice(index, 1);
+    await handleSave("services", { list });
+  };
+
+  const handleSaveServiceForm = async () => {
+    if (!serviceForm.title || !serviceForm.desc) {
+      alert("Please fill in the service title and description.");
+      return;
+    }
+    const featuresArray = serviceForm.features
+      .split(",")
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
+
+    const list = [...servicesList];
+    const itemObj = {
+      title: serviceForm.title,
+      desc: serviceForm.desc,
+      icon: serviceForm.icon,
+      features: featuresArray,
+      status: serviceForm.status
+    };
+
+    if (editingItemIndex !== null) {
+      list[editingItemIndex] = itemObj;
+    } else {
+      list.push(itemObj);
+    }
+
+    await handleSave("services", { list });
+    setIsAddingNew(false);
+    setEditingItemIndex(null);
+  };
+
+  const handleAddNewFaq = () => {
+    setFaqForm({ question: "", answer: "", category: "General", sort_order: faqList.length + 1 });
+    setEditingItemIndex(null);
+    setIsAddingNew(true);
+  };
+
+  const handleEditFaq = (index: number) => {
+    const item = faqList[index];
+    setFaqForm({
+      question: item.question,
+      answer: item.answer,
+      category: item.category || "General",
+      sort_order: Number(item.sort_order) || 0
+    });
+    setEditingItemIndex(index);
+    setIsAddingNew(false);
+  };
+
+  const handleDeleteFaq = async (index: number) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
+    const list = [...faqList];
+    list.splice(index, 1);
+    await handleSave("faq", { list });
+  };
+
+  const handleSaveFaqForm = async () => {
+    if (!faqForm.question || !faqForm.answer) {
+      alert("Please fill in both the FAQ Question and Answer.");
+      return;
+    }
+    const list = [...faqList];
+    const itemObj = {
+      question: faqForm.question,
+      answer: faqForm.answer,
+      category: faqForm.category,
+      sort_order: Number(faqForm.sort_order) || 0
+    };
+
+    if (editingItemIndex !== null) {
+      list[editingItemIndex] = itemObj;
+    } else {
+      list.push(itemObj);
+    }
+
+    await handleSave("faq", { list });
+    setIsAddingNew(false);
+    setEditingItemIndex(null);
+  };
+
+  const handleAddNewPlan = () => {
+    setPlanForm({ name: "", price: "", period: "", desc: "", features: "", popular: false, status: true });
+    setEditingItemIndex(null);
+    setIsAddingNew(true);
+  };
+
+  const handleEditPlan = (index: number) => {
+    const item = plansList[index];
+    setPlanForm({
+      name: item.name,
+      price: item.price,
+      period: item.period,
+      desc: item.desc,
+      features: Array.isArray(item.features) ? item.features.join(", ") : "",
+      popular: item.popular === true,
+      status: item.status !== false
+    });
+    setEditingItemIndex(index);
+    setIsAddingNew(false);
+  };
+
+  const handleDeletePlan = async (index: number) => {
+    if (!confirm("Are you sure you want to delete this Care Plan template?")) return;
+    const list = [...plansList];
+    list.splice(index, 1);
+    await handleSave("plans", { list });
+  };
+
+  const handleSavePlanForm = async () => {
+    if (!planForm.name || !planForm.price || !planForm.desc) {
+      alert("Please fill in the tier name, price rates and short description.");
+      return;
+    }
+    const featuresArray = planForm.features
+      .split(",")
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
+
+    const list = [...plansList];
+    const itemObj = {
+      name: planForm.name,
+      price: planForm.price,
+      period: planForm.period,
+      desc: planForm.desc,
+      features: featuresArray,
+      popular: planForm.popular,
+      status: planForm.status
+    };
+
+    if (editingItemIndex !== null) {
+      list[editingItemIndex] = itemObj;
+    } else {
+      list.push(itemObj);
+    }
+
+    await handleSave("plans", { list });
+    setIsAddingNew(false);
+    setEditingItemIndex(null);
+  };
+
   return (
     <div className="space-y-10">
       <div className="bg-[#0B1D45] border border-white/10 text-white p-10 rounded-[3rem] relative overflow-hidden shadow-2xl">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <span className="px-3 py-1 bg-[#C5A069] text-[#0B1D45] text-[10px] font-black rounded-lg uppercase tracking-[0.2em] shadow-lg shadow-[#C5A069]/20 text-[#0B1D45]">
-              VACS Website Manager
+              VACS Website Control
             </span>
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-              Live Updates Active
+            <span className="text-slate-550 text-[10px] font-bold uppercase tracking-widest text-[#C5A069]">
+              Super Admin Gateway Locked
             </span>
           </div>
           <h3 className="text-5xl font-black mb-4 tracking-tighter italic uppercase underline decoration-[#C5A069]/50 decoration-8 underline-offset-8">
-            Website Control Panel
+            Website CMS Workstation
           </h3>
           <p className="text-slate-400 text-lg max-w-lg font-medium leading-relaxed">
-            Manage care information, caregiver stories, and help guides for
-            Nigerian families.
+            Configure branding copy, about pages, care services, global plans, and help guides.
           </p>
         </div>
         <LayoutDashboard className="absolute top-1/2 right-12 -translate-y-1/2 w-48 h-48 text-white/5 -z-0 rotate-12" />
@@ -628,48 +931,45 @@ function CMSManager({ user }: any) {
         <div className="w-full lg:w-72 shrink-0 space-y-4">
           <CMSNavItem
             active={activeSegment === "branding"}
-            onClick={() => setActiveSegment("branding")}
-            label="Agency Brand"
-          />
-          <CMSNavItem
-            active={activeSegment === "landing"}
-            onClick={() => setActiveSegment("landing")}
-            label="Main Banner"
+            onClick={() => { setActiveSegment("branding"); setIsAddingNew(false); setEditingItemIndex(null); }}
+            label="Agency Brand Identity"
           />
           <CMSNavItem
             active={activeSegment === "about"}
-            onClick={() => setActiveSegment("about")}
-            label="About Visiting Angels"
+            onClick={() => { setActiveSegment("about"); setIsAddingNew(false); setEditingItemIndex(null); }}
+            label="About Story & Mission"
           />
           <CMSNavItem
             active={activeSegment === "services"}
-            onClick={() => setActiveSegment("services")}
-            label="Care Services"
+            onClick={() => { setActiveSegment("services"); setIsAddingNew(false); setEditingItemIndex(null); }}
+            label="Care Services Tracks"
           />
           <CMSNavItem
             active={activeSegment === "faq"}
-            onClick={() => setActiveSegment("faq")}
-            label="Frequently Asked Questions"
+            onClick={() => { setActiveSegment("faq"); setIsAddingNew(false); setEditingItemIndex(null); }}
+            label="Help FAQ Library"
+          />
+          <CMSNavItem
+            active={activeSegment === "care_plans"}
+            onClick={() => { setActiveSegment("care_plans"); setIsAddingNew(false); setEditingItemIndex(null); }}
+            label="Care Plans & Packages"
           />
           <CMSNavItem
             active={activeSegment === "contact"}
-            onClick={() => setActiveSegment("contact")}
-            label="Contact Information"
+            onClick={() => { setActiveSegment("contact"); setIsAddingNew(false); setEditingItemIndex(null); }}
+            label="Contact Office Details"
           />
           <CMSNavItem
             active={activeSegment === "templates"}
-            onClick={() => setActiveSegment("templates")}
+            onClick={() => { setActiveSegment("templates"); setIsAddingNew(false); setEditingItemIndex(null); }}
             label="Communication Templates"
-          />
-          <CMSNavItem
-            active={activeSegment === "images"}
-            onClick={() => setActiveSegment("images")}
-            label="Photo Gallery"
           />
         </div>
 
         {/* Editor Panes */}
         <div className="flex-1 bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm min-h-[600px] relative">
+          
+          {/* SEGMENT 1: BRANDING */}
           {activeSegment === "branding" && (
             <div className="space-y-12 h-full flex flex-col">
               <div className="grid md:grid-cols-2 gap-10">
@@ -761,15 +1061,6 @@ function CMSManager({ user }: any) {
                       }
                     />
                   </div>
-                  <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
-                    <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-2">
-                      Note for Staff
-                    </p>
-                    <p className="text-xs text-blue-800/80 font-medium leading-relaxed">
-                      Updating the logo changes it on the website and all care
-                      reports generated for families.
-                    </p>
-                  </div>
                 </div>
               </div>
               <div className="mt-auto pt-10 border-t border-slate-100 flex justify-end gap-5">
@@ -784,47 +1075,426 @@ function CMSManager({ user }: any) {
             </div>
           )}
 
-          {activeSegment === "contact" && (
+          {/* SEGMENT 2: ABOUT STORY & MISSION */}
+          {activeSegment === "about" && (
             <div className="space-y-12">
               <div className="grid md:grid-cols-2 gap-10">
                 <CMSField
-                  label="Primary Phone"
-                  defaultValue={cmsData.contact?.phone || "+234 800 VACS CARE"}
-                  onChange={(val: string) =>
-                    (cmsData.contact = { ...cmsData.contact, phone: val })
-                  }
+                  label="Hero Large Headline"
+                  defaultValue={aboutData.title}
+                  onChange={(val: string) => (aboutData.title = val)}
                 />
                 <CMSField
-                  label="Support Email"
-                  defaultValue={cmsData.contact?.email || "ops@vacscare.com"}
-                  onChange={(val: string) =>
-                    (cmsData.contact = { ...cmsData.contact, email: val })
-                  }
+                  label="Hero Small Tagline Badge"
+                  defaultValue={aboutData.tagline}
+                  onChange={(val: string) => (aboutData.tagline = val)}
+                />
+                <div className="md:col-span-2">
+                  <CMSField
+                    type="textarea"
+                    label="Core Story Description"
+                    defaultValue={aboutData.description}
+                    onChange={(val: string) => (aboutData.description = val)}
+                  />
+                </div>
+                <CMSField
+                  label="Our Mission Statement headline"
+                  defaultValue={aboutData.missionText}
+                  onChange={(val: string) => (aboutData.missionText = val)}
                 />
                 <CMSField
-                  label="Office Address"
-                  defaultValue={
-                    cmsData.contact?.address ||
-                    "Lagos Mainland East, Lagos State"
-                  }
-                  onChange={(val: string) =>
-                    (cmsData.contact = { ...cmsData.contact, address: val })
-                  }
+                  label="Clinical Verification / Integrity Paragraph"
+                  defaultValue={aboutData.integrityText}
+                  onChange={(val: string) => (aboutData.integrityText = val)}
                 />
-                <CMSField
-                  label="24/7 Support Line"
-                  defaultValue={
-                    cmsData.contact?.emergency || "+234 900 EMERGENCY"
-                  }
-                  onChange={(val: string) =>
-                    (cmsData.contact = { ...cmsData.contact, emergency: val })
-                  }
-                />
+                <div className="md:col-span-2">
+                  <CMSField
+                    label="Banner Photo Link (URL)"
+                    defaultValue={aboutData.bannerUrl}
+                    onChange={(val: string) => (aboutData.bannerUrl = val)}
+                  />
+                </div>
               </div>
               <div className="flex justify-end pt-10 border-t border-slate-100">
                 <Button
                   disabled={isSaving}
-                  onClick={() => handleSave("contact", cmsData.contact)}
+                  onClick={() => handleSave("about", aboutData)}
+                  className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none animate-none"
+                >
+                  {isSaving ? "Saving..." : "Save About Settings"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* SEGMENT 3: SERVICES */}
+          {activeSegment === "services" && (
+            <div className="space-y-8">
+              {!isAddingNew && editingItemIndex === null ? (
+                // List services
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-150">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Active Care Services</h3>
+                    <Button onClick={handleAddNewService} className="h-11 px-6 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-600 border-none flex items-center gap-2">
+                      <Plus size={14} /> Add Service Module
+                    </Button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {servicesList.map((item: any, idx: number) => (
+                      <div key={idx} className="p-6 rounded-3xl border border-slate-150 bg-slate-50 relative flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded uppercase font-black">{item.icon || "Users"}</span>
+                            <span className={`text-[9px] px-2 py-1 rounded font-black uppercase ${item.status !== false ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+                              {item.status !== false ? "Active" : "Hidden"}
+                            </span>
+                          </div>
+                          <h4 className="text-base font-black text-slate-800 italic uppercase mb-2">{item.title}</h4>
+                          <p className="text-xs text-slate-500 font-medium line-clamp-2">{item.desc}</p>
+                        </div>
+                        <div className="flex gap-4 justify-end pt-6">
+                          <button onClick={() => handleEditService(idx)} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800">Edit</button>
+                          <button onClick={() => handleDeleteService(idx)} className="text-[10px] font-black uppercase tracking-wider text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Form service
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <h3 className="text-sm font-black text-slate-800 italic uppercase">{editingItemIndex !== null ? "Edit Service Block" : "Add Service Block"}</h3>
+                    <button onClick={() => { setIsAddingNew(false); setEditingItemIndex(null); }} className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Cancel</button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Service Title</label>
+                      <input 
+                        value={serviceForm.title}
+                        onChange={(e) => setServiceForm({ ...serviceForm, title: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lucide Symbol Icon</label>
+                      <select 
+                        value={serviceForm.icon}
+                        onChange={(e) => setServiceForm({ ...serviceForm, icon: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                      >
+                        <option value="Users">Companion Partners (Users)</option>
+                        <option value="Zap">Recovery Assist (Zap)</option>
+                        <option value="Activity">Physiological (Activity)</option>
+                        <option value="Shield">Safety Guard (Shield)</option>
+                        <option value="Stethoscope">Clinical Stethoscope (Stethoscope)</option>
+                        <option value="Heart">Caregivers Heart (Heart)</option>
+                        <option value="Clock">Time Shift (Clock)</option>
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quick Service Description</label>
+                      <textarea 
+                        value={serviceForm.desc}
+                        onChange={(e) => setServiceForm({ ...serviceForm, desc: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 min-h-[100px] focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Core Features Bullet points (comma-separated)</label>
+                      <input 
+                        value={serviceForm.features}
+                        onChange={(e) => setServiceForm({ ...serviceForm, features: e.target.value })}
+                        placeholder="e.g. Vital Monitoring, BP Tracking, Progress Auditing"
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-4">
+                      <input 
+                        type="checkbox"
+                        id="status"
+                        checked={serviceForm.status}
+                        onChange={(e) => setServiceForm({ ...serviceForm, status: e.target.checked })}
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="status" className="text-[11px] font-black text-slate-600 uppercase tracking-wider cursor-pointer">Service active and visible</label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-8 border-t border-slate-100">
+                    <button onClick={() => { setIsAddingNew(false); setEditingItemIndex(null); }} className="h-14 px-8 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400">Cancel</button>
+                    <Button onClick={handleSaveServiceForm} className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none">Save Service</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SEGMENT 4: FAQ LIBRARY */}
+          {activeSegment === "faq" && (
+            <div className="space-y-8">
+              {!isAddingNew && editingItemIndex === null ? (
+                // FAQ List Overview
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-150">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Clinical FAQ Library</h3>
+                    <Button onClick={handleAddNewFaq} className="h-11 px-6 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-600 border-none flex items-center gap-2">
+                      <Plus size={14} /> Add Question FAQ
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {faqList.map((item: any, idx: number) => (
+                      <div key={idx} className="p-6 rounded-3xl border border-slate-150 bg-slate-50 relative flex justify-between items-center gap-8">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[8px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded uppercase font-black">{item.category || "General"}</span>
+                            <span className="text-[8px] font-mono bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-black">Weight: {item.sort_order || 0}</span>
+                          </div>
+                          <h4 className="text-sm font-black text-slate-800">{item.question}</h4>
+                        </div>
+                        <div className="flex gap-4 shrink-0">
+                          <button onClick={() => handleEditFaq(idx)} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800">Edit</button>
+                          <button onClick={() => handleDeleteFaq(idx)} className="text-[10px] font-black uppercase tracking-wider text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // FAQ Form
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <h3 className="text-sm font-black text-slate-800 italic uppercase">{editingItemIndex !== null ? "Edit FAQ Element" : "Add FAQ Element"}</h3>
+                    <button onClick={() => { setIsAddingNew(false); setEditingItemIndex(null); }} className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Cancel</button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Question Title</label>
+                      <input 
+                        value={faqForm.question}
+                        onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category Group</label>
+                      <select 
+                        value={faqForm.category}
+                        onChange={(e) => setFaqForm({ ...faqForm, category: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                      >
+                        <option value="General">General</option>
+                        <option value="Medical">Medical Oversight</option>
+                        <option value="Billing">Billing Fees</option>
+                        <option value="Standard">Caregivers Support</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sorting Weight</label>
+                      <input 
+                        type="number"
+                        value={faqForm.sort_order}
+                        onChange={(e) => setFaqForm({ ...faqForm, sort_order: Number(e.target.value) })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">FAQ Answer Output</label>
+                      <textarea 
+                        value={faqForm.answer}
+                        onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 min-h-[140px] focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-8 border-t border-slate-100">
+                    <button onClick={() => { setIsAddingNew(false); setEditingItemIndex(null); }} className="h-14 px-8 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400">Cancel</button>
+                    <Button onClick={handleSaveFaqForm} className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none">Save FAQ</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SEGMENT 5: CARE PLANS */}
+          {activeSegment === "care_plans" && (
+            <div className="space-y-8">
+              {!isAddingNew && editingItemIndex === null ? (
+                // Care Tiers List
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-150">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Care Tiers & Tiers Plans</h3>
+                    <Button onClick={handleAddNewPlan} className="h-11 px-6 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-600 border-none flex items-center gap-2">
+                      <Plus size={14} /> Add Care Package
+                    </Button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {plansList.map((item: any, idx: number) => (
+                      <div key={idx} className="p-6 rounded-2xl border border-slate-150 bg-slate-50 relative flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded font-black uppercase">{item.price} / {item.period || "session"}</span>
+                            <div className="flex gap-2">
+                              {item.popular === true && (
+                                <span className="text-[8px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase font-black">Popular</span>
+                              )}
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase ${item.status !== false ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+                                {item.status !== false ? "Active" : "Hidden"}
+                              </span>
+                            </div>
+                          </div>
+                          <h4 className="text-sm font-black text-slate-800 italic uppercase mb-2">{item.name}</h4>
+                          <p className="text-xs text-slate-500 font-medium line-clamp-2">{item.desc}</p>
+                        </div>
+                        <div className="flex gap-4 justify-end pt-6">
+                          <button onClick={() => handleEditPlan(idx)} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800">Edit</button>
+                          <button onClick={() => handleDeletePlan(idx)} className="text-[10px] font-black uppercase tracking-wider text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Care Tier Form
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <h3 className="text-sm font-black text-slate-800 italic uppercase">{editingItemIndex !== null ? "Edit Care Plan Package" : "Create Care Plan Package"}</h3>
+                    <button onClick={() => { setIsAddingNew(false); setEditingItemIndex(null); }} className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Cancel</button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Plan Name</label>
+                      <input 
+                        value={planForm.name}
+                        onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Price Rate</label>
+                        <input 
+                          value={planForm.price}
+                          placeholder="e.g. $480"
+                          onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate Period</label>
+                        <input 
+                          value={planForm.period}
+                          placeholder="e.g. per 8hr session"
+                          onChange={(e) => setPlanForm({ ...planForm, period: e.target.value })}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Description</label>
+                      <textarea 
+                        value={planForm.desc}
+                        onChange={(e) => setPlanForm({ ...planForm, desc: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 min-h-[90px] focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Plan Features (comma-separated)</label>
+                      <input 
+                        value={planForm.features}
+                        onChange={(e) => setPlanForm({ ...planForm, features: e.target.value })}
+                        placeholder="e.g. Advanced Academy Graduate, Daily RN Audit, Vital Sign Monitoring"
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none" 
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-6 pt-4">
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="checkbox"
+                          id="popular"
+                          checked={planForm.popular}
+                          onChange={(e) => setPlanForm({ ...planForm, popular: e.target.checked })}
+                          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label htmlFor="popular" className="text-[11px] font-black text-slate-600 uppercase tracking-wider cursor-pointer">Popular recommended badge</label>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="checkbox"
+                          id="plan_status"
+                          checked={planForm.status}
+                          onChange={(e) => setPlanForm({ ...planForm, status: e.target.checked })}
+                          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label htmlFor="plan_status" className="text-[11px] font-black text-slate-600 uppercase tracking-wider cursor-pointer">Plan package active and visible</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-8 border-t border-slate-100">
+                    <button onClick={() => { setIsAddingNew(false); setEditingItemIndex(null); }} className="h-14 px-8 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400">Cancel</button>
+                    <Button onClick={handleSavePlanForm} className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none">Save Care Plan</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SEGMENT 6: CONTACT OFFICE DETAILS */}
+          {activeSegment === "contact" && (
+            <div className="space-y-12">
+              <div className="grid md:grid-cols-2 gap-10">
+                <CMSField
+                  label="Primary Contact Phone"
+                  defaultValue={contactData.phone}
+                  onChange={(val: string) => (contactData.phone = val)}
+                />
+                <CMSField
+                  label="General Admissions Email Address"
+                  defaultValue={contactData.email}
+                  onChange={(val: string) => (contactData.email = val)}
+                />
+                <CMSField
+                  label="Physical Office Address String"
+                  defaultValue={contactData.address}
+                  onChange={(val: string) => (contactData.address = val)}
+                />
+                <CMSField
+                  label="24/7 Support Hotline Line"
+                  defaultValue={contactData.emergency}
+                  onChange={(val: string) => (contactData.emergency = val)}
+                />
+                <div className="md:col-span-2">
+                  <CMSField
+                    label="Google Maps Embed Location Path (URL)"
+                    defaultValue={contactData.mapsUrl}
+                    onChange={(val: string) => (contactData.mapsUrl = val)}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end pt-10 border-t border-slate-100">
+                <Button
+                  disabled={isSaving}
+                  onClick={() => handleSave("contact", contactData)}
                   className="h-14 px-12 rounded-full text-[11px] font-black uppercase tracking-widest bg-blue-600 border-none"
                 >
                   {isSaving ? "Saving..." : "Save Contact Info"}
@@ -834,16 +1504,6 @@ function CMSManager({ user }: any) {
           )}
 
           {activeSegment === "templates" && <TemplateEditor />}
-
-          {/* Other segments can follow similar pattern */}
-          {activeSegment !== "branding" && activeSegment !== "contact" && (
-            <div className="flex flex-col gap-8 h-full items-center justify-center">
-              <Edit size={48} className="text-slate-100" />
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] italic">
-                Protocol Module Under Integration
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
