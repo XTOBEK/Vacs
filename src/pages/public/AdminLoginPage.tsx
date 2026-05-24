@@ -100,12 +100,7 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-            <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl">
-               <p className="text-[9px] font-black text-[#C5A069] uppercase tracking-widest mb-1 italic">Developer Console</p>
-               <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                  Use the administrative key <span className="text-white">Vacstest2026!</span> for test nodes. If access fails, register the email via the client gateway first.
-               </p>
-            </div>
+
 
             <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-1">

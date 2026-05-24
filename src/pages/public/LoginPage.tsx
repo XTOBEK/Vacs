@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { Heart, Lock, Mail, ArrowLeft, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Heart, Lock, Mail, ArrowLeft, ShieldAlert } from "lucide-react";
 import { auth, db } from "../../lib/firebase";
 import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   updateProfile
@@ -59,39 +57,7 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
       }
   }
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError("");
-    const provider = new GoogleAuthProvider();
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await handleAuthResult(result.user);
-    } catch (err: any) {
-      console.error(err);
-      
-      if (err.code === 'auth/popup-closed-by-user') {
-          setLoading(false);
-          return;
-      }
-      
-      let message = "We couldn't sign you in. Please check your email and password.";
-      
-      if (err.code === 'auth/invalid-credential') {
-        message = "Incorrect email or password. If you haven't created an account yet, please click 'Register Now' below.";
-      } else if (err.code === 'auth/user-disabled') {
-        message = "This account has been disabled. Please contact support.";
-      } else if (err.code === 'auth/too-many-requests') {
-        message = "Too many failed attempts. Please try again later for your security.";
-      } else if (err.message) {
-        message = err.message;
-      }
-      
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -170,17 +136,7 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
               </div>
             )}
 
-            {/* Test Access Helper for QA */}
-            {!isSignUp && (
-              <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl">
-                 <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <ShieldCheck size={12} /> QA Test Credentials
-                 </p>
-                 <p className="text-[10px] text-slate-400 font-bold leading-relaxed italic">
-                    Tester's Note: If using accounts like <span className="text-blue-300">caregiver@vacs.test</span> for the first time, please click <span className="text-white">Register Now</span> below to create the ID in the system.
-                 </p>
-              </div>
-            )}
+
             
             <form onSubmit={handleFormSubmit} className="space-y-4">
                 {isSignUp && (
@@ -214,24 +170,7 @@ export default function LoginPage({ adminOnly = false, allowedRole = null }: any
                 </Button>
             </form>
 
-            {!isSignUp && (
-              <>
-                <div className="flex items-center gap-4 py-4">
-                   <div className="h-px bg-slate-100 flex-1"></div>
-                   <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">OR</span>
-                   <div className="h-px bg-slate-100 flex-1"></div>
-                </div>
 
-                <Button 
-                  onClick={handleGoogleLogin} 
-                  className="w-full h-14 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 rounded-full bg-white text-slate-900 border-2 border-slate-100 hover:bg-slate-50"
-                  disabled={loading}
-                >
-                  <img src="https://www.google.com/favicon.ico" className="w-4 h-4 mr-3" alt="Google" />
-                  {loading ? "Decrypting..." : "Sign in with Google"}
-                </Button>
-              </>
-            )}
             
             <p className="text-[10px] text-center text-slate-400 font-medium leading-relaxed italic">
               VACS treats all institutional and personal emails with high-grade clinical encryption.

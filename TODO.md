@@ -27,8 +27,9 @@ This file is your project roadmap.
     - [x] Fixed "Missing or insufficient permissions" for notifications collection
 - [x] Connect Dynamic CMS modules (Landing, About, Services) to live Firestore data
 - [x] Integrated Active Incident Map and Live Feedback with real-time Firestore notifications
-- [ ] Implement actual scheduling logistics node
-- [ ] Build out the "Internal Academy" (LMS) modules
+- [x] Implement actual scheduling logistics node
+- [x] Build out the "Internal Academy" (LMS) modules
 - [ ] Refine "Finances & Payments" with real gateway integration
-- [ ] UI/UX polishing for mobile responsiveness
+- [x] UI/UX polishing for mobile responsiveness
+- [ ] Sync environment variables with live Vercel dashboard configuration
 - [ ] Red Team Audit for Firestore Security Rules

@@ -1,36 +1,34 @@
-# VACS CEO Strategic Roadmap
-## Executive Lead: Andrew
+# VACS CEO Strategic Roadmap & Operational Priorities
+## Executive Lead: Princewill Iwuoha (CEO)
 
-This directive outlines the critical path for the VACS Dashboard transition from development to live clinical operations.
+This directive outlines the critical path for the VACS deployment transition to live clinical operations at the custom domain `visitingangels.com.ng`.
 
-### Dashboard QA Testing (Priority High)
-Use the [VACS_TEST_CREDENTIALS.md](./VACS_TEST_CREDENTIALS.md) ledger to perform the following validations:
+### 1. Active Priority Issues Check (Domain & Credentials)
+- [x] **Vercel Custom Domain Mapping:** 
+    - Connected Vercel hosting via GitHub pipeline to serve the production portal on `https://visitingangels.com.ng`.
+- [x] **Secure Environment Secrets (.env):** 
+    - Consolidated all private Firebase credentials, Gemini AI keys, and development variables into `/src/lib/firebase.ts` and `.env.example`.
+- [ ] **Declare Environment Variables in Vercel:**
+    - *Action Required:* Access the Vercel Dashboard -> Project Settings -> Environment Variables. Add the Firebase config values with the `VITE_` prefix (`VITE_FIREBASE_API_KEY`, etc.) so the live site operates online successfully.
+- [ ] **Gemini Core Secrets Configuration:**
+    - Ensure your live Vercel deploy has `GEMINI_API_KEY` registered safely to power maps grounding and clinical SOP automation.
 
+### 2. Clinical Operations & QA Testing (VACS Ledger validation)
 - [ ] **Caregiver Portal Audit:**
-    - Log into the Caregiver Dashboard.
-    - Verify schedule visibility and shift logging accuracy.
+    - Log into the Caregiver Dashboard. Verify schedule visibility and shift logging accuracy.
     - Confirm "Protocol Warning Ledger" appears correctly if a strike is manually added by Admin.
-
 - [ ] **Patient & Family Experience Audit:**
-    - Log into the Patient/Family Dashboard.
-    - Verify care plan visibility and caregiver assignment nodes.
+    - Log into the Patient/Family Dashboard. Verify care plan visibility and caregiver assignment nodes.
     - Confirm "VACS Service & Privacy Guarantee" is prominently displayed.
-
 - [ ] **Clinical Oversight Audit (RN):**
-    - Log into the RN Supervisor Dashboard.
-    - Verify "Compliance Watchlist" accurately pulls caregivers with active strikes.
+    - Log into the RN Supervisor Dashboard. Verify "Compliance Watchlist" accurately pulls caregivers with active strikes.
     - Test the "Protocol Review" button flow.
-
 - [ ] **Standard Admin Dispatch Audit:**
-    - Log into the Standard Admin Dashboard.
-    - Verify patient overview and caregiver dispatching UI.
+    - Log into the Standard Admin Dashboard. Verify patient overview and caregiver dispatching UI.
     - Test "System-Wide Compliance Oversight" table functionality (Add/Remove strikes).
 
-- [ ] **Final Approval:** Approve the UI/UX flow and visibility logic for all non-Superadmin roles.
-
----
-### Operational Directives
+### 3. Long-Term Roadmaps
 - [x] Implement actual scheduling logistics node (Internal Dispatch).
 - [x] Populate "Internal Academy" (LMS) with Rule 1-3 training materials.
-- [x] Connect Finance & Payments to live transaction gateway.
-- [x] Full Mobile Responsiveness sign-off.
+- [ ] **Red Team Security Rules Audit:** Run a penetrative check on the current `firestore.rules` setup.
+- [x] **Full Mobile Responsiveness Validation.**
