@@ -15,8 +15,7 @@ import {
   getAuth
 } from "firebase/auth";
 import { initializeApp } from "firebase/app";
-import { db, handleFirestoreError, OperationType } from "../../lib/firebase";
-import firebaseConfig from "../../../firebase-applet-config.json";
+import { db, handleFirestoreError, OperationType, firebaseConfig } from "../../lib/firebase";
 import { 
   UserPlus, 
   ShieldCheck, 
