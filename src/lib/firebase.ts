@@ -68,8 +68,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// --- Connection Test ---
-async function testConnection() {
+// --- Lazy Connection Test (Only runs on first app init) ---
+let connectionTestRun = false;
+
+export async function initializeFirebaseConnection() {
+  if (connectionTestRun) return;
+  connectionTestRun = true;
+  
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
@@ -78,4 +83,3 @@ async function testConnection() {
     }
   }
 }
-testConnection();
